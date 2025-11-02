@@ -101,29 +101,29 @@ export default function BusinessSelector() {
 
   return (
     <div className="min-h-screen bg-background p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">{t('business.select')}</h1>
-          <Button variant="outline" onClick={handleLogout}>
+      <div className="max-w-2xl mx-auto space-y-4">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">{t('business.select')}</h1>
+          <Button variant="outline" onClick={handleLogout} size="sm">
             {t('common.logout')}
           </Button>
         </div>
 
         {!showCreate && (
-          <Button onClick={() => setShowCreate(true)} className="mb-4">
+          <Button onClick={() => setShowCreate(true)} className="w-full" size="sm">
             {t('business.create')}
           </Button>
         )}
 
         {showCreate && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>{t('business.create')}</CardTitle>
+          <Card>
+            <CardHeader className="p-4">
+              <CardTitle className="text-lg">{t('business.create')}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleCreateBusiness} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="businessName">{t('business.name')}</Label>
+            <CardContent className="p-4 pt-0">
+              <form onSubmit={handleCreateBusiness} className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="businessName" className="text-sm">{t('business.name')}</Label>
                   <Input
                     id="businessName"
                     value={newBusinessName}
@@ -131,8 +131,8 @@ export default function BusinessSelector() {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="gstin">{t('business.gstin')}</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="gstin" className="text-sm">{t('business.gstin')}</Label>
                   <Input
                     id="gstin"
                     value={newBusinessGSTIN}
@@ -140,8 +140,8 @@ export default function BusinessSelector() {
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Button type="submit">{t('common.save')}</Button>
-                  <Button type="button" variant="outline" onClick={() => setShowCreate(false)}>
+                  <Button type="submit" size="sm">{t('common.save')}</Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setShowCreate(false)}>
                     {t('common.cancel')}
                   </Button>
                 </div>
@@ -150,13 +150,13 @@ export default function BusinessSelector() {
           </Card>
         )}
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-3">
           {businesses.map((business) => (
             <Card key={business.id} className="cursor-pointer hover:bg-accent" onClick={() => handleSelectBusiness(business)}>
-              <CardContent className="pt-6">
-                <h2 className="text-xl font-semibold">{business.name}</h2>
+              <CardContent className="p-4">
+                <h2 className="text-lg font-semibold">{business.name}</h2>
                 {business.gstin && (
-                  <p className="text-sm text-muted-foreground mt-2">GSTIN: {business.gstin}</p>
+                  <p className="text-sm text-muted-foreground mt-1">GSTIN: {business.gstin}</p>
                 )}
               </CardContent>
             </Card>
