@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { HsnCodeSelector } from '@/components/HsnCodeSelector';
 
 export default function Items() {
   const [items, setItems] = useState<any[]>([]);
@@ -151,14 +152,22 @@ export default function Items() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="hsn_sac_code">{t('items.hsnSac')}</Label>
-                    <Input
-                      id="hsn_sac_code"
+                    <HsnCodeSelector
                       value={formData.hsn_sac_code}
-                      onChange={(e) => setFormData({ ...formData, hsn_sac_code: e.target.value })}
+                      onSelect={(hsnCode, gstRate, description) => {
+                        setFormData({
+                          ...formData,
+                          hsn_sac_code: hsnCode,
+                          gst_rate: gstRate.toString(),
+                        });
+                      }}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Search by HSN/SAC code or description
+                    </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="gst_rate">{t('items.gstRate')}</Label>
+                    <Label htmlFor="gst_rate">{t('items.gstRate')} (%)</Label>
                     <Input
                       id="gst_rate"
                       type="number"
@@ -166,7 +175,14 @@ export default function Items() {
                       value={formData.gst_rate}
                       onChange={(e) => setFormData({ ...formData, gst_rate: e.target.value })}
                       required
+                      readOnly={!!formData.hsn_sac_code}
+                      className={formData.hsn_sac_code ? 'bg-muted' : ''}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      {formData.hsn_sac_code 
+                        ? 'Auto-filled from HSN/SAC code' 
+                        : 'Select HSN/SAC code to auto-fill'}
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="unit_price">{t('items.unitPrice')}</Label>

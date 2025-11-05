@@ -58,6 +58,33 @@ export type Database = {
           },
         ]
       }
+      hsn_codes: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          gst_rate: number
+          hsn_code: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          gst_rate?: number
+          hsn_code: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          gst_rate?: number
+          hsn_code?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       invoice_line_items: {
         Row: {
           created_at: string | null
