@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ export default function Items() {
   });
   const { selectedBusiness } = useBusiness();
   const { t } = useLanguage();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -58,10 +60,20 @@ export default function Items() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user?.id) {
+      toast({
+        title: 'Error',
+        description: 'You must be logged in to create items',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase.from('items').insert({
         ...formData,
         business_id: selectedBusiness?.id,
+        owner_id: user.id,
         gst_rate: Number(formData.gst_rate),
         unit_price: Number(formData.unit_price),
       });

@@ -172,6 +172,7 @@ export type Database = {
           hsn_sac_code: string | null
           id: string
           name: string
+          owner_id: string
           sku: string | null
           unit_of_measure: string
           unit_price: number
@@ -186,6 +187,7 @@ export type Database = {
           hsn_sac_code?: string | null
           id?: string
           name: string
+          owner_id: string
           sku?: string | null
           unit_of_measure?: string
           unit_price?: number
@@ -200,6 +202,7 @@ export type Database = {
           hsn_sac_code?: string | null
           id?: string
           name?: string
+          owner_id?: string
           sku?: string | null
           unit_of_measure?: string
           unit_price?: number
