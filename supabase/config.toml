@@ -1,1 +1,8 @@
 project_id = "yhajamtrsriuuxdmigkp"
+
+[functions.sync-hsn-data]
+verify_jwt = false
+
+[functions.sync-hsn-data.schedule]
+enabled = true
+cron = "0 2 * * *"
