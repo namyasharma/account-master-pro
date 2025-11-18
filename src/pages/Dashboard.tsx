@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { AnomalyDetection } from '@/components/AnomalyDetection';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -115,6 +116,11 @@ export default function Dashboard() {
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Anomaly Detection Section */}
+      <div className="mb-3">
+        <AnomalyDetection businessId={selectedBusiness.id} />
       </div>
 
       <div className="grid gap-3 grid-cols-2">
