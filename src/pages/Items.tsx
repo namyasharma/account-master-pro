@@ -10,17 +10,20 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { HsnCodeSelector } from '@/components/HsnCodeSelector';
+import { ValidationWarningBadge } from '@/components/ValidationWarningBadge';
+import { validateGstRate, validateHsnGstMatch, validateMissingHsn, ValidationWarning } from '@/lib/gstValidation';
 
 export default function Items() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [hsnGstRate, setHsnGstRate] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
     hsn_sac_code: '',
-    gst_rate: '',
-    unit_price: '',
+    gst_rate: 0,
+    unit_price: 0,
     unit_of_measure: 'unit',
   });
   const { selectedBusiness } = useBusiness();
@@ -91,10 +94,11 @@ export default function Items() {
         name: '',
         sku: '',
         hsn_sac_code: '',
-        gst_rate: '',
-        unit_price: '',
+        gst_rate: 0,
+        unit_price: 0,
         unit_of_measure: 'unit',
       });
+      setHsnGstRate(null);
       fetchItems();
     } catch (error: any) {
       toast({
@@ -103,6 +107,21 @@ export default function Items() {
         variant: 'destructive',
       });
     }
+  };
+
+  const getValidationWarnings = (): ValidationWarning[] => {
+    const warnings: ValidationWarning[] = [];
+    
+    const rateWarning = validateGstRate(formData.gst_rate);
+    if (rateWarning) warnings.push(rateWarning);
+
+    const hsnWarning = validateMissingHsn(formData.hsn_sac_code);
+    if (hsnWarning) warnings.push(hsnWarning);
+
+    const matchWarning = validateHsnGstMatch(formData.gst_rate, hsnGstRate);
+    if (matchWarning) warnings.push(matchWarning);
+
+    return warnings;
   };
 
   if (loading) {
@@ -155,10 +174,11 @@ export default function Items() {
                     <HsnCodeSelector
                       value={formData.hsn_sac_code}
                       onSelect={(hsnCode, gstRate, description) => {
+                        setHsnGstRate(gstRate);
                         setFormData({
                           ...formData,
                           hsn_sac_code: hsnCode,
-                          gst_rate: gstRate.toString(),
+                          gst_rate: gstRate,
                         });
                       }}
                     />
@@ -173,7 +193,7 @@ export default function Items() {
                       type="number"
                       step="0.01"
                       value={formData.gst_rate}
-                      onChange={(e) => setFormData({ ...formData, gst_rate: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, gst_rate: parseFloat(e.target.value) || 0 })}
                       required
                       readOnly={!!formData.hsn_sac_code}
                       className={formData.hsn_sac_code ? 'bg-muted' : ''}
@@ -191,7 +211,7 @@ export default function Items() {
                       type="number"
                       step="0.01"
                       value={formData.unit_price}
-                      onChange={(e) => setFormData({ ...formData, unit_price: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, unit_price: parseFloat(e.target.value) || 0 })}
                       required
                     />
                   </div>
@@ -204,6 +224,9 @@ export default function Items() {
                       required
                     />
                   </div>
+
+                  {/* Validation Warnings */}
+                  <ValidationWarningBadge warnings={getValidationWarnings()} />
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit">{t('common.save')}</Button>

@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { ValidationWarningBadge } from '@/components/ValidationWarningBadge';
+import { validateGstRate, validateHsnGstMatch, ValidationWarning } from '@/lib/gstValidation';
 
 interface LineItem {
   item_id: string | null;
@@ -95,6 +97,20 @@ export default function CreateInvoice() {
     });
 
     return { subtotal, gstAmount, total: subtotal + gstAmount };
+  };
+
+  const getLineItemValidationWarnings = (lineItem: LineItem, itemData: any): ValidationWarning[] => {
+    const warnings: ValidationWarning[] = [];
+    
+    const rateWarning = validateGstRate(lineItem.gst_rate);
+    if (rateWarning) warnings.push(rateWarning);
+
+    if (itemData) {
+      const matchWarning = validateHsnGstMatch(lineItem.gst_rate, itemData.gst_rate);
+      if (matchWarning) warnings.push(matchWarning);
+    }
+
+    return warnings;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -284,6 +300,17 @@ export default function CreateInvoice() {
                       />
                     </div>
                   </div>
+
+                  {/* Validation Warnings for this line item */}
+                  {lineItem.item_id && (
+                    <ValidationWarningBadge 
+                      warnings={getLineItemValidationWarnings(
+                        lineItem, 
+                        items.find(i => i.id === lineItem.item_id)
+                      )} 
+                    />
+                  )}
+
                   {lineItems.length > 1 && (
                     <Button type="button" variant="destructive" size="sm" onClick={() => removeLineItem(index)}>
                       Remove

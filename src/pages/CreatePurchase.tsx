@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { ValidationWarningBadge } from '@/components/ValidationWarningBadge';
+import { validateGstRate, ValidationWarning } from '@/lib/gstValidation';
 
 export default function CreatePurchase() {
   const [formData, setFormData] = useState({
@@ -33,6 +35,31 @@ export default function CreatePurchase() {
     const subtotal = Number(formData.subtotal) || 0;
     const gstAmount = Number(formData.gst_amount) || 0;
     return subtotal + gstAmount;
+  };
+
+  const getValidationWarnings = (): ValidationWarning[] => {
+    const warnings: ValidationWarning[] = [];
+    
+    const subtotal = Number(formData.subtotal) || 0;
+    const gstAmount = Number(formData.gst_amount) || 0;
+    
+    // Check if GST is zero when subtotal is not
+    if (gstAmount === 0 && subtotal > 0) {
+      warnings.push({
+        type: 'zero_gst_taxable',
+        message: 'GST amount is zero but purchase has a subtotal - this may indicate a taxable purchase',
+        severity: 'error',
+      });
+    }
+
+    // Calculate effective GST rate and check if it's valid
+    if (subtotal > 0 && gstAmount > 0) {
+      const effectiveGstRate = (gstAmount / subtotal) * 100;
+      const rateWarning = validateGstRate(effectiveGstRate);
+      if (rateWarning) warnings.push(rateWarning);
+    }
+
+    return warnings;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -147,6 +174,9 @@ export default function CreatePurchase() {
                   <span>₹{calculateTotal().toFixed(2)}</span>
                 </div>
               </div>
+
+              {/* Validation Warnings */}
+              <ValidationWarningBadge warnings={getValidationWarnings()} />
 
               <Button type="submit" className="w-full">{t('common.save')}</Button>
             </form>
