@@ -8,15 +8,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { ValidationWarningBadge } from '@/components/ValidationWarningBadge';
 import { validateGstRate, ValidationWarning } from '@/lib/gstValidation';
 import { logWorkflowShortcut } from '@/lib/telemetry';
 
 export default function CreatePurchase() {
+  const [suppliers, setSuppliers] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     entry_number: '',
     entry_date: new Date().toISOString().split('T')[0],
+    supplier_id: '',
     supplier_name: '',
     supplier_gstin: '',
     subtotal: '',
@@ -35,12 +38,73 @@ export default function CreatePurchase() {
       return;
     }
     
+    fetchSuppliers();
+    
     // Handle prefill from workflow shortcuts
     const prefillItemId = searchParams.get('prefillItemId');
+    const prefillSupplierId = searchParams.get('prefillSupplierId');
+    
     if (prefillItemId) {
       fetchAndPrefillItem(prefillItemId);
     }
+    
+    if (prefillSupplierId) {
+      fetchAndPrefillSupplier(prefillSupplierId);
+    }
   }, [selectedBusiness, searchParams]);
+
+  const fetchSuppliers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('*')
+        .eq('business_id', selectedBusiness?.id)
+        .order('name');
+
+      if (error) throw error;
+      setSuppliers(data || []);
+    } catch (error: any) {
+      console.error('Failed to fetch suppliers:', error);
+    }
+  };
+
+  const fetchAndPrefillSupplier = async (supplierId: string) => {
+    try {
+      const { data: supplier, error } = await supabase
+        .from('suppliers')
+        .select('*')
+        .eq('id', supplierId)
+        .single();
+
+      if (error) throw error;
+
+      if (supplier) {
+        setFormData(prev => ({
+          ...prev,
+          supplier_id: supplier.id,
+          supplier_name: supplier.name,
+          supplier_gstin: supplier.gstin || '',
+        }));
+
+        if (user?.id && selectedBusiness?.id) {
+          logWorkflowShortcut({
+            event_name: 'workflow_shortcut_used',
+            user_id: user.id,
+            business_id: selectedBusiness.id,
+            shortcut_type: 'supplier_to_purchase',
+            metadata: { supplier_id: supplierId },
+          });
+        }
+
+        toast({
+          title: 'Supplier prefilled',
+          description: `Pre-filled with ${supplier.name}`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Failed to prefill supplier:', error);
+    }
+  };
 
   const fetchAndPrefillItem = async (itemId: string) => {
     try {
@@ -112,13 +176,29 @@ export default function CreatePurchase() {
     return warnings;
   };
 
+  const handleSupplierSelect = (supplierId: string) => {
+    const supplier = suppliers.find(s => s.id === supplierId);
+    if (supplier) {
+      setFormData({
+        ...formData,
+        supplier_id: supplier.id,
+        supplier_name: supplier.name,
+        supplier_gstin: supplier.gstin || '',
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
       const { error } = await supabase.from('purchase_entries').insert({
-        ...formData,
         business_id: selectedBusiness?.id,
+        entry_number: formData.entry_number,
+        entry_date: formData.entry_date,
+        supplier_id: formData.supplier_id || null,
+        supplier_name: formData.supplier_name,
+        supplier_gstin: formData.supplier_gstin,
         subtotal: Number(formData.subtotal),
         gst_amount: Number(formData.gst_amount),
         total: calculateTotal(),
@@ -176,6 +256,24 @@ export default function CreatePurchase() {
                     onChange={(e) => setFormData({ ...formData, entry_date: e.target.value })}
                     required
                   />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Select Supplier (Optional)</Label>
+                  <Select 
+                    value={formData.supplier_id} 
+                    onValueChange={handleSupplierSelect}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select existing supplier or enter new" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {suppliers.map(supplier => (
+                        <SelectItem key={supplier.id} value={supplier.id}>
+                          {supplier.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="supplier_name">{t('purchases.supplierName')}</Label>

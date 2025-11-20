@@ -24,9 +24,11 @@ interface LineItem {
 
 export default function CreateInvoice() {
   const [items, setItems] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     invoice_number: '',
     invoice_date: new Date().toISOString().split('T')[0],
+    customer_id: '',
     buyer_name: '',
     buyer_gstin: '',
   });
@@ -46,13 +48,73 @@ export default function CreateInvoice() {
       return;
     }
     fetchItems();
+    fetchCustomers();
     
     // Handle prefill from workflow shortcuts
     const prefillItemId = searchParams.get('prefillItemId');
+    const prefillCustomerId = searchParams.get('prefillCustomerId');
+    
     if (prefillItemId) {
       fetchAndPrefillItem(prefillItemId);
     }
+    
+    if (prefillCustomerId) {
+      fetchAndPrefillCustomer(prefillCustomerId);
+    }
   }, [selectedBusiness, searchParams]);
+
+  const fetchCustomers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('business_id', selectedBusiness?.id)
+        .order('name');
+
+      if (error) throw error;
+      setCustomers(data || []);
+    } catch (error: any) {
+      console.error('Failed to fetch customers:', error);
+    }
+  };
+
+  const fetchAndPrefillCustomer = async (customerId: string) => {
+    try {
+      const { data: customer, error } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('id', customerId)
+        .single();
+
+      if (error) throw error;
+
+      if (customer) {
+        setFormData(prev => ({
+          ...prev,
+          customer_id: customer.id,
+          buyer_name: customer.name,
+          buyer_gstin: customer.gstin || '',
+        }));
+
+        if (user?.id && selectedBusiness?.id) {
+          logWorkflowShortcut({
+            event_name: 'workflow_shortcut_used',
+            user_id: user.id,
+            business_id: selectedBusiness.id,
+            shortcut_type: 'customer_to_invoice',
+            metadata: { customer_id: customerId },
+          });
+        }
+
+        toast({
+          title: 'Customer prefilled',
+          description: `Pre-filled with ${customer.name}`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Failed to prefill customer:', error);
+    }
+  };
 
   const fetchItems = async () => {
     try {
@@ -164,6 +226,18 @@ export default function CreateInvoice() {
     return warnings;
   };
 
+  const handleCustomerSelect = (customerId: string) => {
+    const customer = customers.find(c => c.id === customerId);
+    if (customer) {
+      setFormData({
+        ...formData,
+        customer_id: customer.id,
+        buyer_name: customer.name,
+        buyer_gstin: customer.gstin || '',
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -173,8 +247,12 @@ export default function CreateInvoice() {
       const { data: invoice, error: invoiceError } = await supabase
         .from('invoices')
         .insert({
-          ...formData,
           business_id: selectedBusiness?.id,
+          invoice_number: formData.invoice_number,
+          invoice_date: formData.invoice_date,
+          customer_id: formData.customer_id || null,
+          buyer_name: formData.buyer_name,
+          buyer_gstin: formData.buyer_gstin,
           subtotal,
           gst_amount: gstAmount,
           total,
@@ -253,6 +331,24 @@ export default function CreateInvoice() {
                     onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
                     required
                   />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Select Customer (Optional)</Label>
+                  <Select 
+                    value={formData.customer_id} 
+                    onValueChange={handleCustomerSelect}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select existing customer or enter new" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.map(customer => (
+                        <SelectItem key={customer.id} value={customer.id}>
+                          {customer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="buyer_name">{t('invoices.buyerName')}</Label>
