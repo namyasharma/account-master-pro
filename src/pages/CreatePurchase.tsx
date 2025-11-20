@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { ValidationWarningBadge } from '@/components/ValidationWarningBadge';
 import { validateGstRate, ValidationWarning } from '@/lib/gstValidation';
+import { logWorkflowShortcut } from '@/lib/telemetry';
 
 export default function CreatePurchase() {
   const [formData, setFormData] = useState({
@@ -21,15 +23,63 @@ export default function CreatePurchase() {
     gst_amount: '',
   });
   const { selectedBusiness } = useBusiness();
+  const { user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     if (!selectedBusiness) {
       navigate('/businesses');
+      return;
     }
-  }, [selectedBusiness]);
+    
+    // Handle prefill from workflow shortcuts
+    const prefillItemId = searchParams.get('prefillItemId');
+    if (prefillItemId) {
+      fetchAndPrefillItem(prefillItemId);
+    }
+  }, [selectedBusiness, searchParams]);
+
+  const fetchAndPrefillItem = async (itemId: string) => {
+    try {
+      const { data: item, error } = await supabase
+        .from('items')
+        .select('*')
+        .eq('id', itemId)
+        .single();
+
+      if (error) throw error;
+
+      if (item) {
+        // Prefill form with item data
+        setFormData(prev => ({
+          ...prev,
+          subtotal: String(item.unit_price),
+          gst_amount: String((item.unit_price * item.gst_rate) / 100),
+        }));
+
+        // Log telemetry
+        if (user?.id && selectedBusiness?.id) {
+          logWorkflowShortcut({
+            event_name: 'workflow_shortcut_used',
+            user_id: user.id,
+            business_id: selectedBusiness.id,
+            shortcut_type: 'item_to_purchase',
+            metadata: { item_id: itemId },
+          });
+        }
+
+        toast({
+          title: 'Item prefilled',
+          description: `Pre-filled with data from ${item.name}`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Failed to prefill item:', error);
+    }
+  };
 
   const calculateTotal = () => {
     const subtotal = Number(formData.subtotal) || 0;

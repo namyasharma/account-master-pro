@@ -12,12 +12,16 @@ import { useToast } from '@/hooks/use-toast';
 import { HsnCodeSelector } from '@/components/HsnCodeSelector';
 import { ValidationWarningBadge } from '@/components/ValidationWarningBadge';
 import { validateGstRate, validateHsnGstMatch, validateMissingHsn, ValidationWarning } from '@/lib/gstValidation';
+import { WorkflowShortcutModal } from '@/components/WorkflowShortcutModal';
+import { logWorkflowShortcut } from '@/lib/telemetry';
 
 export default function Items() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [hsnGstRate, setHsnGstRate] = useState<number | null>(null);
+  const [showWorkflowModal, setShowWorkflowModal] = useState(false);
+  const [createdItemId, setCreatedItemId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
@@ -74,13 +78,13 @@ export default function Items() {
     }
 
     try {
-      const { error } = await supabase.from('items').insert({
+      const { data: newItem, error } = await supabase.from('items').insert({
         ...formData,
         business_id: selectedBusiness?.id,
         owner_id: user.id,
         gst_rate: Number(formData.gst_rate),
         unit_price: Number(formData.unit_price),
-      });
+      }).select().single();
 
       if (error) throw error;
 
@@ -90,6 +94,9 @@ export default function Items() {
       });
       
       setShowForm(false);
+      setCreatedItemId(newItem.id);
+      setShowWorkflowModal(true);
+      
       setFormData({
         name: '',
         sku: '',
@@ -259,6 +266,26 @@ export default function Items() {
             </Card>
           ))}
         </div>
+
+        <WorkflowShortcutModal
+          open={showWorkflowModal}
+          onOpenChange={(open) => {
+            setShowWorkflowModal(open);
+            if (!open) setCreatedItemId(null);
+          }}
+          title="Item created successfully!"
+          description="What would you like to do next?"
+          actions={[
+            {
+              label: 'Create Purchase',
+              path: `/purchases/create?prefillItemId=${createdItemId}`,
+            },
+            {
+              label: 'Create Invoice',
+              path: `/invoices/create?prefillItemId=${createdItemId}`,
+            },
+          ]}
+        />
       </div>
     </div>
   );

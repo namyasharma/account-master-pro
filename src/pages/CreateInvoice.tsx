@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useBusiness } from '@/contexts/BusinessContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { ValidationWarningBadge } from '@/components/ValidationWarningBadge';
 import { validateGstRate, validateHsnGstMatch, ValidationWarning } from '@/lib/gstValidation';
+import { logWorkflowShortcut } from '@/lib/telemetry';
 
 interface LineItem {
   item_id: string | null;
@@ -32,9 +34,11 @@ export default function CreateInvoice() {
     { item_id: null, description: '', quantity: 1, unit_price: 0, gst_rate: 0 }
   ]);
   const { selectedBusiness } = useBusiness();
+  const { user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     if (!selectedBusiness) {
@@ -42,7 +46,13 @@ export default function CreateInvoice() {
       return;
     }
     fetchItems();
-  }, [selectedBusiness]);
+    
+    // Handle prefill from workflow shortcuts
+    const prefillItemId = searchParams.get('prefillItemId');
+    if (prefillItemId) {
+      fetchAndPrefillItem(prefillItemId);
+    }
+  }, [selectedBusiness, searchParams]);
 
   const fetchItems = async () => {
     try {
@@ -59,6 +69,47 @@ export default function CreateInvoice() {
         description: error.message,
         variant: 'destructive',
       });
+    }
+  };
+
+  const fetchAndPrefillItem = async (itemId: string) => {
+    try {
+      const { data: item, error } = await supabase
+        .from('items')
+        .select('*')
+        .eq('id', itemId)
+        .single();
+
+      if (error) throw error;
+
+      if (item) {
+        // Prefill first line item with item data
+        setLineItems([{
+          item_id: item.id,
+          description: item.name,
+          quantity: 1,
+          unit_price: Number(item.unit_price),
+          gst_rate: Number(item.gst_rate),
+        }]);
+
+        // Log telemetry
+        if (user?.id && selectedBusiness?.id) {
+          logWorkflowShortcut({
+            event_name: 'workflow_shortcut_used',
+            user_id: user.id,
+            business_id: selectedBusiness.id,
+            shortcut_type: 'item_to_invoice',
+            metadata: { item_id: itemId },
+          });
+        }
+
+        toast({
+          title: 'Item prefilled',
+          description: `Pre-filled with data from ${item.name}`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Failed to prefill item:', error);
     }
   };
 
