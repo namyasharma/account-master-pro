@@ -12,6 +12,8 @@ import Auth from "./pages/Auth";
 import BusinessSelector from "./pages/BusinessSelector";
 import Dashboard from "./pages/Dashboard";
 import Items from "./pages/Items";
+import Suppliers from "./pages/Suppliers";
+import Customers from "./pages/Customers";
 import Invoices from "./pages/Invoices";
 import CreateInvoice from "./pages/CreateInvoice";
 import Purchases from "./pages/Purchases";
@@ -50,6 +52,8 @@ const App = () => (
                   <Route path="/businesses" element={<BusinessRoute><BusinessSelector /></BusinessRoute>} />
                   <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/items" element={<ProtectedRoute><Items /></ProtectedRoute>} />
+                  <Route path="/suppliers" element={<ProtectedRoute><Suppliers /></ProtectedRoute>} />
+                  <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
                   <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
                   <Route path="/invoices/create" element={<ProtectedRoute><CreateInvoice /></ProtectedRoute>} />
                   <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />

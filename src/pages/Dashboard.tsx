@@ -132,6 +132,22 @@ export default function Dashboard() {
           </Card>
         </Link>
 
+        <Link to="/suppliers">
+          <Card className="cursor-pointer hover:bg-accent">
+            <CardContent className="p-4">
+              <h3 className="text-sm font-semibold">Suppliers</h3>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link to="/customers">
+          <Card className="cursor-pointer hover:bg-accent">
+            <CardContent className="p-4">
+              <h3 className="text-sm font-semibold">Customers</h3>
+            </CardContent>
+          </Card>
+        </Link>
+
         <Link to="/invoices">
           <Card className="cursor-pointer hover:bg-accent">
             <CardContent className="p-4">

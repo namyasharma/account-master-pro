@@ -58,6 +58,50 @@ export type Database = {
           },
         ]
       }
+      customers: {
+        Row: {
+          address: string | null
+          business_id: string
+          created_at: string | null
+          email: string | null
+          gstin: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          business_id: string
+          created_at?: string | null
+          email?: string | null
+          gstin?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          business_id?: string
+          created_at?: string | null
+          email?: string | null
+          gstin?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hsn_codes: {
         Row: {
           created_at: string | null
@@ -145,6 +189,7 @@ export type Database = {
           buyer_gstin: string | null
           buyer_name: string
           created_at: string | null
+          customer_id: string | null
           gst_amount: number
           id: string
           invoice_date: string
@@ -158,6 +203,7 @@ export type Database = {
           buyer_gstin?: string | null
           buyer_name: string
           created_at?: string | null
+          customer_id?: string | null
           gst_amount?: number
           id?: string
           invoice_date?: string
@@ -171,6 +217,7 @@ export type Database = {
           buyer_gstin?: string | null
           buyer_name?: string
           created_at?: string | null
+          customer_id?: string | null
           gst_amount?: number
           id?: string
           invoice_date?: string
@@ -185,6 +232,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
         ]
@@ -279,6 +333,7 @@ export type Database = {
           id: string
           subtotal: number
           supplier_gstin: string | null
+          supplier_id: string | null
           supplier_name: string
           total: number
           updated_at: string | null
@@ -292,6 +347,7 @@ export type Database = {
           id?: string
           subtotal?: number
           supplier_gstin?: string | null
+          supplier_id?: string | null
           supplier_name: string
           total?: number
           updated_at?: string | null
@@ -305,6 +361,7 @@ export type Database = {
           id?: string
           subtotal?: number
           supplier_gstin?: string | null
+          supplier_id?: string | null
           supplier_name?: string
           total?: number
           updated_at?: string | null
@@ -312,6 +369,57 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "purchase_entries_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_entries_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          business_id: string
+          created_at: string | null
+          email: string | null
+          gstin: string | null
+          id: string
+          name: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          business_id: string
+          created_at?: string | null
+          email?: string | null
+          gstin?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          business_id?: string
+          created_at?: string | null
+          email?: string | null
+          gstin?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
