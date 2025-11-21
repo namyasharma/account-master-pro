@@ -6,11 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { RotateCcw } from 'lucide-react';
 
 export default function Settings() {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, signOut, refreshOnboardingStatus } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Sync theme with user profile
   useThemeSync();
@@ -18,6 +22,30 @@ export default function Settings() {
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
+  };
+
+  const handleRestartOnboarding = async () => {
+    try {
+      await supabase
+        .from('profiles')
+        .update({ onboarding_completed: false })
+        .eq('id', user?.id);
+      
+      await refreshOnboardingStatus();
+      
+      toast({
+        title: 'Onboarding reset',
+        description: 'You will now see the onboarding flow again',
+      });
+      
+      navigate('/onboarding');
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -55,6 +83,31 @@ export default function Settings() {
               checked={theme === 'dark'}
               onCheckedChange={toggleTheme}
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="p-4 md:p-6">
+          <CardTitle className="text-lg md:text-xl">Help & Support</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 md:p-6 pt-0">
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm md:text-base font-medium">Onboarding Tour</Label>
+              <p className="text-xs md:text-sm text-muted-foreground mb-3">
+                Re-run the onboarding tour to learn about app features
+              </p>
+              <Button 
+                onClick={handleRestartOnboarding} 
+                variant="outline" 
+                size="sm"
+                className="w-full sm:w-auto"
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Restart Onboarding
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
