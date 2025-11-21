@@ -243,6 +243,26 @@ export default function CreateInvoice() {
     e.preventDefault();
     
     try {
+      // Validate business is selected
+      if (!selectedBusiness?.id) {
+        toast({
+          title: 'Validation Error',
+          description: 'Please select a business before creating an invoice',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Validate at least one line item
+      if (lineItems.length === 0) {
+        toast({
+          title: 'Validation Error',
+          description: 'Invoice must have at least one line item',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const { subtotal, gstAmount, total } = calculateTotals();
 
       // Validate invoice data
@@ -269,7 +289,7 @@ export default function CreateInvoice() {
       const { data: invoice, error: invoiceError } = await supabase
         .from('invoices')
         .insert({
-          business_id: selectedBusiness?.id,
+          business_id: selectedBusiness.id,
           invoice_number: formData.invoice_number,
           invoice_date: formData.invoice_date,
           customer_id: formData.customer_id || null,
@@ -282,11 +302,20 @@ export default function CreateInvoice() {
         .select()
         .single();
 
-      if (invoiceError) throw invoiceError;
+      if (invoiceError) {
+        // Handle specific database errors
+        if (invoiceError.code === '23505' && invoiceError.message.includes('invoices_business_id_invoice_number_key')) {
+          throw new Error(`Invoice number "${formData.invoice_number}" already exists for this business. Please use a unique invoice number.`);
+        }
+        if (invoiceError.code === '23503') {
+          throw new Error('Invalid business or customer reference. Please refresh and try again.');
+        }
+        throw invoiceError;
+      }
 
       const lineItemsData = lineItems.map(item => ({
         invoice_id: invoice.id,
-        item_id: item.item_id,
+        item_id: item.item_id || null,
         description: item.description,
         quantity: item.quantity,
         unit_price: item.unit_price,
@@ -299,7 +328,11 @@ export default function CreateInvoice() {
         .from('invoice_line_items')
         .insert(lineItemsData);
 
-      if (lineItemsError) throw lineItemsError;
+      if (lineItemsError) {
+        // Rollback: delete the invoice if line items fail
+        await supabase.from('invoices').delete().eq('id', invoice.id);
+        throw new Error('Failed to create invoice line items. Please try again.');
+      }
 
       toast({
         title: 'Success',
@@ -310,7 +343,7 @@ export default function CreateInvoice() {
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to create invoice',
         variant: 'destructive',
       });
     }
