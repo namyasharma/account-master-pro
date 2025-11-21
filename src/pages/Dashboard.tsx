@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { AnomalyDetection } from '@/components/AnomalyDetection';
+import { Package, Truck, Users, FileText } from 'lucide-react';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -80,37 +81,37 @@ export default function Dashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <div>
           <h1 className="font-bold">{selectedBusiness?.name}</h1>
-          <Button variant="link" onClick={handleChangeBusiness} className="px-0 h-auto py-0 text-sm">
+          <Button variant="link" onClick={handleChangeBusiness} className="px-0 h-auto py-0 text-sm text-primary hover:text-primary-dark">
             Change Business
           </Button>
         </div>
       </div>
 
       <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-3">
-        <Card className="card-responsive">
+        <Card className="card-responsive border-primary/10 hover:border-primary/30 transition-colors">
           <CardHeader className="p-3 md:p-4">
-            <CardTitle className="text-xs md:text-sm">{t('dashboard.totalSales')}</CardTitle>
+            <CardTitle className="text-xs md:text-sm text-muted-foreground">{t('dashboard.totalSales')}</CardTitle>
           </CardHeader>
           <CardContent className="p-3 md:p-4 pt-0">
-            <div className="text-lg md:text-xl lg:text-2xl font-bold">₹{stats.totalSales.toFixed(2)}</div>
+            <div className="text-lg md:text-xl lg:text-2xl font-bold text-primary">₹{stats.totalSales.toFixed(2)}</div>
           </CardContent>
         </Card>
 
-        <Card className="card-responsive">
+        <Card className="card-responsive border-primary/10 hover:border-primary/30 transition-colors">
           <CardHeader className="p-3 md:p-4">
-            <CardTitle className="text-xs md:text-sm">{t('dashboard.totalPurchases')}</CardTitle>
+            <CardTitle className="text-xs md:text-sm text-muted-foreground">{t('dashboard.totalPurchases')}</CardTitle>
           </CardHeader>
           <CardContent className="p-3 md:p-4 pt-0">
-            <div className="text-lg md:text-xl lg:text-2xl font-bold">₹{stats.totalPurchases.toFixed(2)}</div>
+            <div className="text-lg md:text-xl lg:text-2xl font-bold text-primary">₹{stats.totalPurchases.toFixed(2)}</div>
           </CardContent>
         </Card>
 
-        <Card className="card-responsive">
+        <Card className="card-responsive border-primary/10 hover:border-primary/30 transition-colors">
           <CardHeader className="p-3 md:p-4">
-            <CardTitle className="text-xs md:text-sm">{t('dashboard.netGST')}</CardTitle>
+            <CardTitle className="text-xs md:text-sm text-muted-foreground">{t('dashboard.netGST')}</CardTitle>
           </CardHeader>
           <CardContent className="p-3 md:p-4 pt-0">
-            <div className="text-lg md:text-xl lg:text-2xl font-bold">₹{Math.abs(stats.netGST).toFixed(2)}</div>
+            <div className="text-lg md:text-xl lg:text-2xl font-bold text-primary">₹{Math.abs(stats.netGST).toFixed(2)}</div>
             <p className="text-xs md:text-sm text-muted-foreground">
               {stats.netGST >= 0 ? t('dashboard.payable') : t('dashboard.refundable')}
             </p>
@@ -123,35 +124,47 @@ export default function Dashboard() {
         <AnomalyDetection businessId={selectedBusiness.id} />
       </div>
 
-      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
         <Link to="/items" className="block">
-          <Card className="cursor-pointer hover:bg-accent transition-colors min-h-[80px] md:min-h-[100px] card-responsive">
-            <CardContent className="p-4 md:p-6 flex items-center justify-center h-full">
-              <h3 className="text-sm md:text-base font-semibold text-center">{t('items.title')}</h3>
+          <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.02] h-[56px] card-responsive border-primary/20 hover:border-primary">
+            <CardContent className="p-3 flex items-center gap-3 h-full">
+              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <Package className="h-4 w-4" />
+              </div>
+              <h3 className="text-sm font-semibold truncate">{t('items.title')}</h3>
             </CardContent>
           </Card>
         </Link>
 
         <Link to="/suppliers" className="block">
-          <Card className="cursor-pointer hover:bg-accent transition-colors min-h-[80px] md:min-h-[100px] card-responsive">
-            <CardContent className="p-4 md:p-6 flex items-center justify-center h-full">
-              <h3 className="text-sm md:text-base font-semibold text-center">Suppliers</h3>
+          <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.02] h-[56px] card-responsive border-primary/20 hover:border-primary">
+            <CardContent className="p-3 flex items-center gap-3 h-full">
+              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <Truck className="h-4 w-4" />
+              </div>
+              <h3 className="text-sm font-semibold truncate">Suppliers</h3>
             </CardContent>
           </Card>
         </Link>
 
         <Link to="/customers" className="block">
-          <Card className="cursor-pointer hover:bg-accent transition-colors min-h-[80px] md:min-h-[100px] card-responsive">
-            <CardContent className="p-4 md:p-6 flex items-center justify-center h-full">
-              <h3 className="text-sm md:text-base font-semibold text-center">Customers</h3>
+          <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.02] h-[56px] card-responsive border-primary/20 hover:border-primary">
+            <CardContent className="p-3 flex items-center gap-3 h-full">
+              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <Users className="h-4 w-4" />
+              </div>
+              <h3 className="text-sm font-semibold truncate">Customers</h3>
             </CardContent>
           </Card>
         </Link>
 
         <Link to="/invoices" className="block">
-          <Card className="cursor-pointer hover:bg-accent transition-colors min-h-[80px] md:min-h-[100px] card-responsive">
-            <CardContent className="p-4 md:p-6 flex items-center justify-center h-full">
-              <h3 className="text-sm md:text-base font-semibold text-center">{t('invoices.title')}</h3>
+          <Card className="group cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.02] h-[56px] card-responsive border-primary/20 hover:border-primary">
+            <CardContent className="p-3 flex items-center gap-3 h-full">
+              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <FileText className="h-4 w-4" />
+              </div>
+              <h3 className="text-sm font-semibold truncate">{t('invoices.title')}</h3>
             </CardContent>
           </Card>
         </Link>

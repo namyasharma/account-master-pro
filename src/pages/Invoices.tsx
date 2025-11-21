@@ -50,10 +50,12 @@ export default function Invoices() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b">
+      <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm">
         <div className="container-responsive py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <h1 className="font-bold">{t('invoices.title')}</h1>
-          <Button onClick={() => navigate('/dashboard')} size="default">Back to Dashboard</Button>
+          <Button onClick={() => navigate('/dashboard')} size="sm" variant="outline" className="border-primary/30 hover:bg-primary/10">
+            Back to Dashboard
+          </Button>
         </div>
       </div>
 
@@ -64,7 +66,7 @@ export default function Invoices() {
 
         <div className="grid gap-3 md:gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {invoices.map((invoice) => (
-            <Card key={invoice.id} className="card-responsive">
+            <Card key={invoice.id} className="card-responsive hover:shadow-lg hover:scale-[1.01] transition-all duration-200 border-primary/10">
               <CardContent className="p-4 md:p-6">
                 <div className="flex flex-col space-y-2">
                   <div className="flex justify-between items-start">
@@ -75,13 +77,13 @@ export default function Invoices() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <div className="text-base md:text-lg font-semibold">₹{Number(invoice.total).toFixed(2)}</div>
+                      <div className="text-base md:text-lg font-semibold text-primary">₹{Number(invoice.total).toFixed(2)}</div>
                       <p className="text-xs md:text-sm text-muted-foreground">
                         GST: ₹{Number(invoice.gst_amount).toFixed(2)}
                       </p>
                     </div>
                   </div>
-                  <div>
+                  <div className="pt-2 border-t border-border/50">
                     <p className="text-sm md:text-base text-muted-foreground">{invoice.buyer_name}</p>
                     {invoice.buyer_gstin && (
                       <p className="text-xs md:text-sm text-muted-foreground">GSTIN: {invoice.buyer_gstin}</p>

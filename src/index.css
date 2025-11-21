@@ -8,35 +8,44 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    /* Cool green theme - Light mode */
     --background: 0 0% 100%;
     --foreground: 0 0% 15%;
 
     --card: 0 0% 100%;
     --card-foreground: 0 0% 15%;
+    --card-gradient: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(236,249,240,0.9));
 
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 15%;
 
-    --primary: 122 39% 49%;
+    /* Cool green primary #4CAF50 */
+    --primary: 142 71% 49%;
     --primary-foreground: 0 0% 100%;
+    
+    /* Darker green accent #2E7D32 */
+    --primary-dark: 125 52% 34%;
 
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 15%;
+    --secondary: 142 20% 96%;
+    --secondary-foreground: 125 52% 25%;
 
     --muted: 0 0% 96%;
     --muted-foreground: 0 0% 45%;
 
-    --accent: 122 39% 96%;
-    --accent-foreground: 122 39% 20%;
+    --accent: 142 45% 96%;
+    --accent-foreground: 125 52% 30%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 122 39% 49%;
+    --border: 142 15% 88%;
+    --input: 142 15% 90%;
+    --ring: 142 71% 49%;
 
-    --radius: 0.375rem;
+    --radius: 0.75rem;
+
+    /* Box shadows */
+    --shadow-light: 0 6px 16px rgba(34, 60, 80, 0.06);
 
     /* Responsive spacing system */
     --space-xs: 8px;
@@ -78,33 +87,42 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 0 0% 12%;
+    /* Cool green theme - Dark mode */
+    --background: 0 0% 9%;
     --foreground: 0 0% 95%;
 
-    --card: 0 0% 15%;
+    --card: 0 0% 9%;
     --card-foreground: 0 0% 95%;
+    --card-gradient: linear-gradient(180deg, rgba(24,24,24,0.9), rgba(8,44,22,0.9));
 
-    --popover: 0 0% 15%;
+    --popover: 0 0% 12%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 122 39% 49%;
+    /* Cool green primary #4CAF50 */
+    --primary: 142 71% 49%;
     --primary-foreground: 0 0% 100%;
+    
+    /* Darker green accent #2E7D32 */
+    --primary-dark: 125 52% 34%;
 
-    --secondary: 0 0% 20%;
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 125 30% 15%;
+    --secondary-foreground: 142 45% 85%;
 
-    --muted: 0 0% 20%;
+    --muted: 0 0% 18%;
     --muted-foreground: 0 0% 60%;
 
-    --accent: 122 39% 20%;
-    --accent-foreground: 122 39% 85%;
+    --accent: 125 40% 16%;
+    --accent-foreground: 142 55% 75%;
 
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 25%;
-    --input: 0 0% 25%;
-    --ring: 122 39% 49%;
+    --border: 125 15% 22%;
+    --input: 125 15% 20%;
+    --ring: 142 71% 49%;
+
+    /* Box shadows */
+    --shadow-dark: 0 6px 16px rgba(0,0,0,0.6);
   }
 }
 
