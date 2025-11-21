@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { businessSchema } from '@/lib/validation';
 
 export default function BusinessSelector() {
   const [businesses, setBusinesses] = useState<any[]>([]);
@@ -55,6 +56,25 @@ export default function BusinessSelector() {
     e.preventDefault();
     
     try {
+      // Validate business data
+      const validationResult = businessSchema.safeParse({
+        name: newBusinessName,
+        gstin: newBusinessGSTIN,
+        email: '',
+        phone: '',
+        address: '',
+      });
+
+      if (!validationResult.success) {
+        const errors = validationResult.error.errors.map(e => e.message).join(', ');
+        toast({
+          title: 'Validation Error',
+          description: errors,
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const { data, error } = await supabase
         .from('businesses')
         .insert({

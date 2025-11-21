@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { WorkflowShortcutModal } from '@/components/WorkflowShortcutModal';
 import { logWorkflowShortcut } from '@/lib/telemetry';
+import { customerSupplierSchema } from '@/lib/validation';
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState<any[]>([]);
@@ -64,6 +65,19 @@ export default function Suppliers() {
     e.preventDefault();
 
     try {
+      // Validate supplier data
+      const validationResult = customerSupplierSchema.safeParse(formData);
+
+      if (!validationResult.success) {
+        const errors = validationResult.error.errors.map(e => e.message).join(', ');
+        toast({
+          title: 'Validation Error',
+          description: errors,
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const { data: newSupplier, error } = await supabase
         .from('suppliers')
         .insert({
