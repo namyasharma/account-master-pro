@@ -17,7 +17,7 @@ export default function BusinessSelector() {
   const [showCreate, setShowCreate] = useState(false);
   const [newBusinessName, setNewBusinessName] = useState('');
   const [newBusinessGSTIN, setNewBusinessGSTIN] = useState('');
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { setSelectedBusiness } = useBusiness();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -110,11 +110,6 @@ export default function BusinessSelector() {
     navigate('/dashboard');
   };
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/auth');
-  };
-
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -124,9 +119,6 @@ export default function BusinessSelector() {
       <div className="max-w-2xl mx-auto space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <h1 className="font-bold">{t('business.select')}</h1>
-          <Button variant="outline" onClick={handleLogout} size="sm" className="border-primary/30 hover:bg-primary/10">
-            {t('common.logout')}
-          </Button>
         </div>
 
         {!showCreate && (
