@@ -100,32 +100,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (error) return { error };
     if (!data.user) return { error: new Error('User creation failed') };
 
-    // Explicitly create profile record
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({
-        id: data.user.id,
-        email: data.user.email || email,
-        full_name: fullName,
-        onboarding_completed: false
-      });
+    try {
+      // Explicitly create profile record
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          email: data.user.email || email,
+          full_name: fullName,
+          onboarding_completed: false
+        });
 
-    // Ignore duplicate key errors (23505) in case trigger already created it
-    if (profileError && profileError.code !== '23505') {
-      return { error: profileError };
-    }
+      // Ignore duplicate key errors (23505) in case trigger already created it
+      if (profileError && profileError.code !== '23505') {
+        throw profileError;
+      }
 
-    // Explicitly create user_roles record
-    const { error: roleError } = await supabase
-      .from('user_roles')
-      .insert({
-        user_id: data.user.id,
-        role: 'user'
-      });
+      // Explicitly create user_roles record
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: data.user.id,
+          role: 'user'
+        });
 
-    // Ignore duplicate key errors in case trigger already created it
-    if (roleError && roleError.code !== '23505') {
-      return { error: roleError };
+      // Ignore duplicate key errors in case trigger already created it
+      if (roleError && roleError.code !== '23505') {
+        throw roleError;
+      }
+    } catch (err) {
+      return { error: err };
     }
 
     return { error: null };
