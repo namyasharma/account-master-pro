@@ -6,10 +6,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { Download, FileText } from 'lucide-react';
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const { selectedBusiness } = useBusiness();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -44,6 +46,88 @@ export default function Invoices() {
     }
   };
 
+  const handleExportCSV = async () => {
+    if (!selectedBusiness) return;
+    
+    setExporting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-invoices-csv?business_id=${selectedBusiness.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error('Export failed');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoices-${selectedBusiness.name}-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Export successful",
+        description: "Invoice data exported to CSV",
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export failed",
+        description: "Could not export invoices",
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportPDF = async (invoiceId: string) => {
+    setExporting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-invoice-pdf?invoice_id=${invoiceId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error('Export failed');
+
+      const html = await response.text();
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.print();
+      }
+
+      toast({
+        title: "PDF ready",
+        description: "Invoice opened in new window for printing",
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export failed",
+        description: "Could not generate PDF",
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
@@ -60,9 +144,20 @@ export default function Invoices() {
       </div>
 
       <div className="container-responsive p-responsive">
-        <Link to="/invoices/create">
-          <Button className="mb-4 w-full sm:w-auto" size="default">{t('invoices.create')}</Button>
-        </Link>
+        <div className="flex gap-2 mb-4 flex-wrap">
+          <Link to="/invoices/create" className="flex-1 sm:flex-none">
+            <Button className="w-full" size="default">{t('invoices.create')}</Button>
+          </Link>
+          <Button 
+            onClick={handleExportCSV}
+            variant="outline"
+            disabled={exporting || invoices.length === 0}
+            size="default"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+        </div>
 
         <div className="grid gap-3 md:gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {invoices.map((invoice) => (
@@ -89,6 +184,16 @@ export default function Invoices() {
                       <p className="text-xs md:text-sm text-muted-foreground">GSTIN: {invoice.buyer_gstin}</p>
                     )}
                   </div>
+                  <Button
+                    onClick={() => handleExportPDF(invoice.id)}
+                    variant="outline"
+                    size="sm"
+                    disabled={exporting}
+                    className="mt-2 w-full"
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Export PDF
+                  </Button>
                 </div>
               </CardContent>
             </Card>

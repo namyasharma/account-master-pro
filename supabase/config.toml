@@ -6,3 +6,12 @@ verify_jwt = false
 [functions.sync-hsn-data.schedule]
 enabled = true
 cron = "0 2 * * *"
+
+[functions.export-invoices-csv]
+verify_jwt = true
+
+[functions.export-purchases-csv]
+verify_jwt = true
+
+[functions.export-invoice-pdf]
+verify_jwt = true
