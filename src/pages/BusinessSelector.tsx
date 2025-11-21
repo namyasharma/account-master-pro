@@ -124,13 +124,13 @@ export default function BusinessSelector() {
       <div className="max-w-2xl mx-auto space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <h1 className="font-bold">{t('business.select')}</h1>
-          <Button variant="outline" onClick={handleLogout} size="sm">
+          <Button variant="outline" onClick={handleLogout} size="sm" className="border-primary/30 hover:bg-primary/10">
             {t('common.logout')}
           </Button>
         </div>
 
         {!showCreate && (
-          <Button onClick={() => setShowCreate(true)} className="w-full" size="default">
+          <Button onClick={() => setShowCreate(true)} className="w-full sm:w-auto" size="default">
             {t('business.create')}
           </Button>
         )}
@@ -161,7 +161,7 @@ export default function BusinessSelector() {
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" size="default">{t('common.save')}</Button>
-                  <Button type="button" variant="outline" size="default" onClick={() => setShowCreate(false)}>
+                  <Button type="button" variant="outline" size="default" onClick={() => setShowCreate(false)} className="border-primary/30">
                     {t('common.cancel')}
                   </Button>
                 </div>
@@ -172,11 +172,11 @@ export default function BusinessSelector() {
 
         <div className="space-y-3">
           {businesses.map((business) => (
-            <Card key={business.id} className="cursor-pointer hover:bg-accent transition-colors card-responsive" onClick={() => handleSelectBusiness(business)}>
+            <Card key={business.id} className="cursor-pointer hover:shadow-lg hover:scale-[1.01] transition-all duration-200 card-responsive border-primary/20 hover:border-primary" onClick={() => handleSelectBusiness(business)}>
               <CardContent className="p-4">
-                <h2 className="text-lg font-semibold">{business.name}</h2>
+                <h2 className="text-base md:text-lg font-semibold">{business.name}</h2>
                 {business.gstin && (
-                  <p className="text-sm text-muted-foreground mt-1">GSTIN: {business.gstin}</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mt-1">GSTIN: {business.gstin}</p>
                 )}
               </CardContent>
             </Card>

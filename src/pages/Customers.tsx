@@ -121,10 +121,12 @@ export default function Customers() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="border-b">
+      <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm">
         <div className="container-responsive py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <h1 className="font-bold">Customers</h1>
-          <Button onClick={() => navigate('/dashboard')} size="default">Back to Dashboard</Button>
+          <Button onClick={() => navigate('/dashboard')} size="sm" variant="outline" className="border-primary/30 hover:bg-primary/10">
+            Back to Dashboard
+          </Button>
         </div>
       </div>
 
@@ -136,7 +138,7 @@ export default function Customers() {
         )}
 
         {showForm && (
-          <Card className="mb-6 card-responsive">
+          <Card className="mb-6 card-responsive border-primary/20">
             <CardHeader className="p-4 md:p-6">
               <CardTitle>Add New Customer</CardTitle>
             </CardHeader>
@@ -188,7 +190,7 @@ export default function Customers() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button type="submit" size="default">{t('common.save')}</Button>
-                  <Button type="button" variant="outline" size="default" onClick={() => setShowForm(false)}>
+                  <Button type="button" variant="outline" size="default" onClick={() => setShowForm(false)} className="border-primary/30">
                     {t('common.cancel')}
                   </Button>
                 </div>
@@ -199,12 +201,12 @@ export default function Customers() {
 
         <div className="grid gap-3 md:gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {customers.map((customer) => (
-            <Card key={customer.id} className="card-responsive">
+            <Card key={customer.id} className="card-responsive hover:shadow-lg hover:scale-[1.01] transition-all duration-200 border-primary/10">
               <CardContent className="p-4 md:p-6">
                 <div>
                   <h3 className="text-base md:text-lg font-semibold">{customer.name}</h3>
                   {customer.gstin && (
-                    <p className="text-xs md:text-sm text-muted-foreground">GSTIN: {customer.gstin}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground mt-1">GSTIN: {customer.gstin}</p>
                   )}
                   {customer.phone && (
                     <p className="text-xs md:text-sm text-muted-foreground">Phone: {customer.phone}</p>
