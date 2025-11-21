@@ -76,7 +76,7 @@ export default function Auth() {
             title: 'Success',
             description: 'Account created successfully!',
           });
-          navigate('/businesses');
+          navigate('/onboarding');
         }
       }
     } finally {

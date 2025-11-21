@@ -132,7 +132,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (profileError && !isDuplicateError(profileError)) {
         console.error('Profile creation failed during signup', profileError);
-        throw profileError;
+        const friendlyError = new Error('Failed to create user profile. Please try again.');
+        (friendlyError as any).details = profileError;
+        throw friendlyError;
       }
 
       // Explicitly create user_roles record and wait for completion
@@ -143,7 +145,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (roleError && !isDuplicateError(roleError)) {
         console.error('User role creation failed during signup', roleError);
-        throw roleError;
+        const friendlyError = new Error('Failed to set user permissions. Please try again.');
+        (friendlyError as any).details = roleError;
+        throw friendlyError;
       }
 
       // Ensure onboarding and role state are up to date immediately after signup
