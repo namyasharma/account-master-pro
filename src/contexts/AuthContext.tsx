@@ -85,56 +85,84 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          full_name: fullName
-        }
-      }
+          full_name: fullName,
+        },
+      },
     });
 
-    if (error) return { error };
-    if (!data.user) return { error: new Error('User creation failed') };
+    if (error) {
+      console.error('Auth signup failed', error);
+      return { error };
+    }
+
+    if (!data.user) {
+      const creationError = new Error('User creation failed: missing user in response');
+      console.error('Auth signup returned no user', creationError);
+      return { error: creationError };
+    }
+
+    const user = data.user;
+
+    const isDuplicateError = (e: any) => {
+      if (!e) return false;
+      const code = (e.code ?? e.errno ?? '').toString();
+      const message = `${e.message ?? ''} ${e.details ?? ''} ${e.hint ?? ''}`.toLowerCase();
+      return (
+        code === '23505' ||
+        message.includes('duplicate key') ||
+        message.includes('unique constraint')
+      );
+    };
 
     try {
-      // Explicitly create profile record
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: data.user.id,
-          email: data.user.email || email,
-          full_name: fullName,
-          onboarding_completed: false
-        });
+      // Explicitly create profile record and wait for completion
+      const { error: profileError } = await supabase.from('profiles').insert({
+        id: user.id,
+        email: user.email || email,
+        full_name: fullName,
+        onboarding_completed: false,
+      });
 
-      // Ignore duplicate key errors (23505) in case trigger already created it
-      if (profileError && profileError.code !== '23505') {
+      if (profileError && !isDuplicateError(profileError)) {
+        console.error('Profile creation failed during signup', profileError);
         throw profileError;
       }
 
-      // Explicitly create user_roles record
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: data.user.id,
-          role: 'user'
-        });
+      // Explicitly create user_roles record and wait for completion
+      const { error: roleError } = await supabase.from('user_roles').insert({
+        user_id: user.id,
+        role: 'user',
+      });
 
-      // Ignore duplicate key errors in case trigger already created it
-      if (roleError && roleError.code !== '23505') {
+      if (roleError && !isDuplicateError(roleError)) {
+        console.error('User role creation failed during signup', roleError);
         throw roleError;
       }
+
+      // Ensure onboarding and role state are up to date immediately after signup
+      try {
+        await Promise.all([
+          fetchUserRole(user.id),
+          fetchOnboardingStatus(user.id),
+        ]);
+      } catch (stateError) {
+        // Do not block signup on state fetch issues, but log for debugging
+        console.error('Failed to refresh onboarding/role state after signup', stateError);
+      }
     } catch (err) {
+      console.error('Unexpected error during signup profile/role creation', err);
       return { error: err };
     }
 
     return { error: null };
   };
-
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
