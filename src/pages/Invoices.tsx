@@ -51,37 +51,41 @@ export default function Invoices() {
   return (
     <div className="min-h-screen bg-background">
       <div className="border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">{t('invoices.title')}</h1>
-          <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+        <div className="container-responsive py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <h1 className="font-bold">{t('invoices.title')}</h1>
+          <Button onClick={() => navigate('/dashboard')} size="default">Back to Dashboard</Button>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-4">
+      <div className="container-responsive p-responsive">
         <Link to="/invoices/create">
-          <Button className="mb-4">{t('invoices.create')}</Button>
+          <Button className="mb-4 w-full sm:w-auto" size="default">{t('invoices.create')}</Button>
         </Link>
 
-        <div className="grid gap-4">
+        <div className="grid gap-3 md:gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {invoices.map((invoice) => (
-            <Card key={invoice.id}>
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-semibold">{invoice.invoice_number}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(invoice.invoice_date).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{invoice.buyer_name}</p>
-                    {invoice.buyer_gstin && (
-                      <p className="text-sm text-muted-foreground">GSTIN: {invoice.buyer_gstin}</p>
-                    )}
+            <Card key={invoice.id} className="card-responsive">
+              <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h3 className="text-base md:text-lg font-semibold">{invoice.invoice_number}</h3>
+                      <p className="text-xs md:text-sm text-muted-foreground">
+                        {new Date(invoice.invoice_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-base md:text-lg font-semibold">₹{Number(invoice.total).toFixed(2)}</div>
+                      <p className="text-xs md:text-sm text-muted-foreground">
+                        GST: ₹{Number(invoice.gst_amount).toFixed(2)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold">₹{Number(invoice.total).toFixed(2)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      GST: ₹{Number(invoice.gst_amount).toFixed(2)}
-                    </p>
+                  <div>
+                    <p className="text-sm md:text-base text-muted-foreground">{invoice.buyer_name}</p>
+                    {invoice.buyer_gstin && (
+                      <p className="text-xs md:text-sm text-muted-foreground">GSTIN: {invoice.buyer_gstin}</p>
+                    )}
                   </div>
                 </div>
               </CardContent>

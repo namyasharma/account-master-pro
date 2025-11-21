@@ -37,6 +37,44 @@ All colors MUST be HSL.
     --ring: 122 39% 49%;
 
     --radius: 0.375rem;
+
+    /* Responsive spacing system */
+    --space-xs: 8px;
+    --space-sm: 12px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+
+    /* Responsive typography - Mobile (≤ 640px) */
+    --font-base: 15px;
+    --font-h1: 24px;
+    --font-h2: 20px;
+    --font-h3: 18px;
+
+    /* Card constraints */
+    --card-max-width: 420px;
+  }
+
+  /* Tablet (641–1024px) */
+  @media (min-width: 641px) and (max-width: 1024px) {
+    :root {
+      --font-base: 16px;
+      --font-h1: 28px;
+      --font-h2: 22px;
+      --font-h3: 19px;
+      --card-max-width: 720px;
+    }
+  }
+
+  /* Desktop (> 1024px) */
+  @media (min-width: 1025px) {
+    :root {
+      --font-base: 17px;
+      --font-h1: 32px;
+      --font-h2: 24px;
+      --font-h3: 20px;
+      --card-max-width: none;
+    }
   }
 
   .dark {
@@ -77,5 +115,71 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-size: var(--font-base);
+  }
+
+  h1 {
+    font-size: var(--font-h1);
+    @apply font-bold;
+  }
+
+  h2 {
+    font-size: var(--font-h2);
+    @apply font-semibold;
+  }
+
+  h3 {
+    font-size: var(--font-h3);
+    @apply font-semibold;
+  }
+}
+
+@layer utilities {
+  .container-responsive {
+    @apply mx-auto w-full;
+    padding-left: var(--space-md);
+    padding-right: var(--space-md);
+    max-width: 100%;
+  }
+
+  @media (min-width: 641px) {
+    .container-responsive {
+      padding-left: var(--space-lg);
+      padding-right: var(--space-lg);
+      max-width: 1280px;
+    }
+  }
+
+  @media (min-width: 1025px) {
+    .container-responsive {
+      padding-left: var(--space-xl);
+      padding-right: var(--space-xl);
+    }
+  }
+
+  .card-responsive {
+    max-width: var(--card-max-width);
+  }
+
+  .space-xs { margin: var(--space-xs); }
+  .space-sm { margin: var(--space-sm); }
+  .space-md { margin: var(--space-md); }
+  .space-lg { margin: var(--space-lg); }
+  .space-xl { margin: var(--space-xl); }
+
+  .p-responsive {
+    padding: var(--space-md);
+  }
+
+  @media (min-width: 641px) {
+    .p-responsive {
+      padding: var(--space-lg);
+    }
+  }
+
+  @media (min-width: 1025px) {
+    .p-responsive {
+      padding: var(--space-xl);
+    }
   }
 }

@@ -76,42 +76,42 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="flex justify-between items-center">
+    <div className="p-responsive space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
         <div>
-          <h1 className="text-xl font-bold">{selectedBusiness?.name}</h1>
-          <Button variant="link" onClick={handleChangeBusiness} className="px-0 h-auto py-0">
+          <h1 className="font-bold">{selectedBusiness?.name}</h1>
+          <Button variant="link" onClick={handleChangeBusiness} className="px-0 h-auto py-0 text-sm">
             Change Business
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-3 grid-cols-3">
-        <Card>
-          <CardHeader className="p-3">
-            <CardTitle className="text-xs">{t('dashboard.totalSales')}</CardTitle>
+      <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-3">
+        <Card className="card-responsive">
+          <CardHeader className="p-3 md:p-4">
+            <CardTitle className="text-xs md:text-sm">{t('dashboard.totalSales')}</CardTitle>
           </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className="text-lg font-bold">₹{stats.totalSales.toFixed(2)}</div>
+          <CardContent className="p-3 md:p-4 pt-0">
+            <div className="text-lg md:text-xl lg:text-2xl font-bold">₹{stats.totalSales.toFixed(2)}</div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="p-3">
-            <CardTitle className="text-xs">{t('dashboard.totalPurchases')}</CardTitle>
+        <Card className="card-responsive">
+          <CardHeader className="p-3 md:p-4">
+            <CardTitle className="text-xs md:text-sm">{t('dashboard.totalPurchases')}</CardTitle>
           </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className="text-lg font-bold">₹{stats.totalPurchases.toFixed(2)}</div>
+          <CardContent className="p-3 md:p-4 pt-0">
+            <div className="text-lg md:text-xl lg:text-2xl font-bold">₹{stats.totalPurchases.toFixed(2)}</div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="p-3">
-            <CardTitle className="text-xs">{t('dashboard.netGST')}</CardTitle>
+        <Card className="card-responsive">
+          <CardHeader className="p-3 md:p-4">
+            <CardTitle className="text-xs md:text-sm">{t('dashboard.netGST')}</CardTitle>
           </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className="text-lg font-bold">₹{Math.abs(stats.netGST).toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
+          <CardContent className="p-3 md:p-4 pt-0">
+            <div className="text-lg md:text-xl lg:text-2xl font-bold">₹{Math.abs(stats.netGST).toFixed(2)}</div>
+            <p className="text-xs md:text-sm text-muted-foreground">
               {stats.netGST >= 0 ? t('dashboard.payable') : t('dashboard.refundable')}
             </p>
           </CardContent>
@@ -119,39 +119,39 @@ export default function Dashboard() {
       </div>
 
       {/* Anomaly Detection Section */}
-      <div className="mb-3">
+      <div className="mb-3 md:mb-4">
         <AnomalyDetection businessId={selectedBusiness.id} />
       </div>
 
-      <div className="grid gap-3 grid-cols-2">
-        <Link to="/items">
-          <Card className="cursor-pointer hover:bg-accent">
-            <CardContent className="p-4">
-              <h3 className="text-sm font-semibold">{t('items.title')}</h3>
+      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <Link to="/items" className="block">
+          <Card className="cursor-pointer hover:bg-accent transition-colors min-h-[80px] md:min-h-[100px] card-responsive">
+            <CardContent className="p-4 md:p-6 flex items-center justify-center h-full">
+              <h3 className="text-sm md:text-base font-semibold text-center">{t('items.title')}</h3>
             </CardContent>
           </Card>
         </Link>
 
-        <Link to="/suppliers">
-          <Card className="cursor-pointer hover:bg-accent">
-            <CardContent className="p-4">
-              <h3 className="text-sm font-semibold">Suppliers</h3>
+        <Link to="/suppliers" className="block">
+          <Card className="cursor-pointer hover:bg-accent transition-colors min-h-[80px] md:min-h-[100px] card-responsive">
+            <CardContent className="p-4 md:p-6 flex items-center justify-center h-full">
+              <h3 className="text-sm md:text-base font-semibold text-center">Suppliers</h3>
             </CardContent>
           </Card>
         </Link>
 
-        <Link to="/customers">
-          <Card className="cursor-pointer hover:bg-accent">
-            <CardContent className="p-4">
-              <h3 className="text-sm font-semibold">Customers</h3>
+        <Link to="/customers" className="block">
+          <Card className="cursor-pointer hover:bg-accent transition-colors min-h-[80px] md:min-h-[100px] card-responsive">
+            <CardContent className="p-4 md:p-6 flex items-center justify-center h-full">
+              <h3 className="text-sm md:text-base font-semibold text-center">Customers</h3>
             </CardContent>
           </Card>
         </Link>
 
-        <Link to="/invoices">
-          <Card className="cursor-pointer hover:bg-accent">
-            <CardContent className="p-4">
-              <h3 className="text-sm font-semibold">{t('invoices.title')}</h3>
+        <Link to="/invoices" className="block">
+          <Card className="cursor-pointer hover:bg-accent transition-colors min-h-[80px] md:min-h-[100px] card-responsive">
+            <CardContent className="p-4 md:p-6 flex items-center justify-center h-full">
+              <h3 className="text-sm md:text-base font-semibold text-center">{t('invoices.title')}</h3>
             </CardContent>
           </Card>
         </Link>

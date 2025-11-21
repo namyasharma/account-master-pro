@@ -122,27 +122,27 @@ export default function Customers() {
   return (
     <div className="min-h-screen bg-background">
       <div className="border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Customers</h1>
-          <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+        <div className="container-responsive py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <h1 className="font-bold">Customers</h1>
+          <Button onClick={() => navigate('/dashboard')} size="default">Back to Dashboard</Button>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-4">
+      <div className="container-responsive p-responsive">
         {!showForm && (
-          <Button onClick={() => setShowForm(true)} className="mb-4">
+          <Button onClick={() => setShowForm(true)} className="mb-4 w-full sm:w-auto" size="default">
             Add Customer
           </Button>
         )}
 
         {showForm && (
-          <Card className="mb-6">
-            <CardHeader>
+          <Card className="mb-6 card-responsive">
+            <CardHeader className="p-4 md:p-6">
               <CardTitle>Add New Customer</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 md:p-6 pt-0">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name">Customer Name *</Label>
                     <Input
@@ -186,9 +186,9 @@ export default function Customers() {
                     />
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Button type="submit">{t('common.save')}</Button>
-                  <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button type="submit" size="default">{t('common.save')}</Button>
+                  <Button type="button" variant="outline" size="default" onClick={() => setShowForm(false)}>
                     {t('common.cancel')}
                   </Button>
                 </div>
@@ -197,26 +197,24 @@ export default function Customers() {
           </Card>
         )}
 
-        <div className="grid gap-4">
+        <div className="grid gap-3 md:gap-4 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
           {customers.map((customer) => (
-            <Card key={customer.id}>
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-semibold">{customer.name}</h3>
-                    {customer.gstin && (
-                      <p className="text-sm text-muted-foreground">GSTIN: {customer.gstin}</p>
-                    )}
-                    {customer.phone && (
-                      <p className="text-sm text-muted-foreground">Phone: {customer.phone}</p>
-                    )}
-                    {customer.email && (
-                      <p className="text-sm text-muted-foreground">Email: {customer.email}</p>
-                    )}
-                    {customer.address && (
-                      <p className="text-sm text-muted-foreground">Address: {customer.address}</p>
-                    )}
-                  </div>
+            <Card key={customer.id} className="card-responsive">
+              <CardContent className="p-4 md:p-6">
+                <div>
+                  <h3 className="text-base md:text-lg font-semibold">{customer.name}</h3>
+                  {customer.gstin && (
+                    <p className="text-xs md:text-sm text-muted-foreground">GSTIN: {customer.gstin}</p>
+                  )}
+                  {customer.phone && (
+                    <p className="text-xs md:text-sm text-muted-foreground">Phone: {customer.phone}</p>
+                  )}
+                  {customer.email && (
+                    <p className="text-xs md:text-sm text-muted-foreground">Email: {customer.email}</p>
+                  )}
+                  {customer.address && (
+                    <p className="text-xs md:text-sm text-muted-foreground">Address: {customer.address}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>

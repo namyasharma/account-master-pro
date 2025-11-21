@@ -85,14 +85,14 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">
+    <div className="min-h-screen flex items-center justify-center bg-background p-responsive">
+      <Card className="w-full max-w-md card-responsive">
+        <CardHeader className="p-4 md:p-6">
+          <CardTitle className="text-center">
             {isLogin ? t('auth.login') : t('auth.signup')}
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 md:p-6 pt-0">
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div className="space-y-2">
@@ -129,7 +129,7 @@ export default function Auth() {
                 maxLength={100}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading} size="default">
               {isLogin ? t('auth.login') : t('auth.signup')}
             </Button>
             <Button
@@ -137,6 +137,7 @@ export default function Auth() {
               variant="ghost"
               className="w-full"
               onClick={() => setIsLogin(!isLogin)}
+              size="default"
             >
               {isLogin ? t('auth.dontHaveAccount') : t('auth.alreadyHaveAccount')}
             </Button>
