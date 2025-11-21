@@ -7,10 +7,12 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   userRole: 'admin' | 'user' | null;
+  onboardingCompleted: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
+  refreshOnboardingStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,6 +21,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchUserRole = async (userId: string) => {
@@ -31,6 +34,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUserRole(data?.role || 'user');
   };
 
+  const fetchOnboardingStatus = async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('onboarding_completed')
+      .eq('id', userId)
+      .single();
+    
+    setOnboardingCompleted(data?.onboarding_completed || false);
+  };
+
+  const refreshOnboardingStatus = async () => {
+    if (user) {
+      await fetchOnboardingStatus(user.id);
+    }
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -40,9 +59,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (session?.user) {
           setTimeout(() => {
             fetchUserRole(session.user.id);
+            fetchOnboardingStatus(session.user.id);
           }, 0);
         } else {
           setUserRole(null);
+          setOnboardingCompleted(false);
         }
         setLoading(false);
       }
@@ -54,6 +75,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (session?.user) {
         fetchUserRole(session.user.id);
+        fetchOnboardingStatus(session.user.id);
       }
       setLoading(false);
     });
@@ -90,7 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, userRole, signUp, signIn, signOut, loading }}>
+    <AuthContext.Provider value={{ user, session, userRole, onboardingCompleted, signUp, signIn, signOut, loading, refreshOnboardingStatus }}>
       {children}
     </AuthContext.Provider>
   );

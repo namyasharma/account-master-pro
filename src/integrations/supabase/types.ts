@@ -305,6 +305,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          onboarding_completed: boolean | null
           theme: string | null
           updated_at: string | null
         }
@@ -313,6 +314,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          onboarding_completed?: boolean | null
           theme?: string | null
           updated_at?: string | null
         }
@@ -321,6 +323,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          onboarding_completed?: boolean | null
           theme?: string | null
           updated_at?: string | null
         }
