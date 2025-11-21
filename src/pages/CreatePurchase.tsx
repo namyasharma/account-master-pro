@@ -193,6 +193,16 @@ export default function CreatePurchase() {
     e.preventDefault();
     
     try {
+      // Validate business is selected
+      if (!selectedBusiness?.id) {
+        toast({
+          title: 'Validation Error',
+          description: 'Please select a business before creating a purchase entry',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       // Validate purchase data
       const validationResult = purchaseSchema.safeParse({
         entry_number: formData.entry_number,
@@ -215,7 +225,7 @@ export default function CreatePurchase() {
       }
 
       const { error } = await supabase.from('purchase_entries').insert({
-        business_id: selectedBusiness?.id,
+        business_id: selectedBusiness.id,
         entry_number: formData.entry_number,
         entry_date: formData.entry_date,
         supplier_id: formData.supplier_id || null,
@@ -226,7 +236,16 @@ export default function CreatePurchase() {
         total: calculateTotal(),
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle specific database errors
+        if (error.code === '23505' && error.message.includes('purchase_entries_business_id_entry_number_key')) {
+          throw new Error(`Entry number "${formData.entry_number}" already exists for this business. Please use a unique entry number.`);
+        }
+        if (error.code === '23503') {
+          throw new Error('Invalid business or supplier reference. Please refresh and try again.');
+        }
+        throw error;
+      }
 
       toast({
         title: 'Success',
@@ -237,7 +256,7 @@ export default function CreatePurchase() {
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to create purchase entry',
         variant: 'destructive',
       });
     }
