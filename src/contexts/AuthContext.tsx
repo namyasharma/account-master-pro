@@ -108,9 +108,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: data.user.email || email,
         full_name: fullName,
         onboarding_completed: false
-      })
-      .select()
-      .single();
+      });
 
     // Ignore duplicate key errors (23505) in case trigger already created it
     if (profileError && profileError.code !== '23505') {
@@ -123,9 +121,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .insert({
         user_id: data.user.id,
         role: 'user'
-      })
-      .select()
-      .single();
+      });
 
     // Ignore duplicate key errors in case trigger already created it
     if (roleError && roleError.code !== '23505') {
