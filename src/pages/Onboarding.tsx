@@ -31,7 +31,7 @@ export default function Onboarding() {
   const [contactEmail, setContactEmail] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { user } = useAuth();
+  const { user, refreshOnboardingStatus } = useAuth();
   const { setSelectedBusiness } = useBusiness();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -41,16 +41,22 @@ export default function Onboarding() {
   const handleComplete = async () => {
     try {
       setLoading(true);
-      await supabase
+
+      const { error } = await supabase
         .from('profiles')
         .update({ onboarding_completed: true })
         .eq('id', user?.id);
-      
+
+      if (error) throw error;
+
+      // Ensure the updated onboarding status is reflected in auth context
+      await refreshOnboardingStatus();
+
       toast({
         title: 'Welcome!',
-        description: 'You\'re all set to start using the app.',
+        description: "You're all set to start using the app.",
       });
-      
+
       navigate('/dashboard');
     } catch (error: any) {
       toast({
