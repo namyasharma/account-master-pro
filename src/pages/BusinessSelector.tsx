@@ -120,23 +120,23 @@ export default function BusinessSelector() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-background p-responsive">
       <div className="max-w-2xl mx-auto space-y-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">{t('business.select')}</h1>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <h1 className="font-bold">{t('business.select')}</h1>
           <Button variant="outline" onClick={handleLogout} size="sm">
             {t('common.logout')}
           </Button>
         </div>
 
         {!showCreate && (
-          <Button onClick={() => setShowCreate(true)} className="w-full" size="sm">
+          <Button onClick={() => setShowCreate(true)} className="w-full" size="default">
             {t('business.create')}
           </Button>
         )}
 
         {showCreate && (
-          <Card>
+          <Card className="card-responsive">
             <CardHeader className="p-4">
               <CardTitle className="text-lg">{t('business.create')}</CardTitle>
             </CardHeader>
@@ -160,8 +160,8 @@ export default function BusinessSelector() {
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Button type="submit" size="sm">{t('common.save')}</Button>
-                  <Button type="button" variant="outline" size="sm" onClick={() => setShowCreate(false)}>
+                  <Button type="submit" size="default">{t('common.save')}</Button>
+                  <Button type="button" variant="outline" size="default" onClick={() => setShowCreate(false)}>
                     {t('common.cancel')}
                   </Button>
                 </div>
@@ -172,7 +172,7 @@ export default function BusinessSelector() {
 
         <div className="space-y-3">
           {businesses.map((business) => (
-            <Card key={business.id} className="cursor-pointer hover:bg-accent" onClick={() => handleSelectBusiness(business)}>
+            <Card key={business.id} className="cursor-pointer hover:bg-accent transition-colors card-responsive" onClick={() => handleSelectBusiness(business)}>
               <CardContent className="p-4">
                 <h2 className="text-lg font-semibold">{business.name}</h2>
                 {business.gstin && (

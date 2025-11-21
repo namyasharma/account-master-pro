@@ -19,22 +19,22 @@ export default function BottomNav() {
   );
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
-      <div className="flex justify-around items-center h-16 max-w-screen-xl mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 shadow-lg">
+      <div className="flex justify-around items-center min-h-[64px] md:min-h-[72px] max-w-screen-xl mx-auto px-2">
         {visibleItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
               cn(
-                'flex flex-col items-center justify-center flex-1 h-full gap-1',
-                'text-muted-foreground hover:text-foreground',
-                isActive && 'text-primary'
+                'flex flex-col items-center justify-center flex-1 min-h-[56px] gap-1 px-2 rounded-lg transition-colors',
+                'text-muted-foreground hover:text-foreground hover:bg-accent/50',
+                isActive && 'text-primary bg-accent'
               )
             }
           >
-            <item.icon className="h-5 w-5" />
-            <span className="text-xs">{item.label}</span>
+            <item.icon className="h-5 w-5 md:h-6 md:w-6" />
+            <span className="text-[10px] md:text-xs font-medium">{item.label}</span>
           </NavLink>
         ))}
       </div>
