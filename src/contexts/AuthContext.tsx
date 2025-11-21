@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUp = async (email: string, password: string, fullName: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -96,7 +96,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     });
-    return { error };
+
+    if (error) return { error };
+    if (!data.user) return { error: new Error('User creation failed') };
+
+    // Explicitly create profile record
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: data.user.id,
+        email: data.user.email || email,
+        full_name: fullName,
+        onboarding_completed: false
+      })
+      .select()
+      .single();
+
+    // Ignore duplicate key errors (23505) in case trigger already created it
+    if (profileError && profileError.code !== '23505') {
+      return { error: profileError };
+    }
+
+    // Explicitly create user_roles record
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .insert({
+        user_id: data.user.id,
+        role: 'user'
+      })
+      .select()
+      .single();
+
+    // Ignore duplicate key errors in case trigger already created it
+    if (roleError && roleError.code !== '23505') {
+      return { error: roleError };
+    }
+
+    return { error: null };
   };
 
   const signIn = async (email: string, password: string) => {
