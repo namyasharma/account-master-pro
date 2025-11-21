@@ -14,6 +14,7 @@ import { ValidationWarningBadge } from '@/components/ValidationWarningBadge';
 import { validateGstRate, validateHsnGstMatch, validateMissingHsn, ValidationWarning } from '@/lib/gstValidation';
 import { WorkflowShortcutModal } from '@/components/WorkflowShortcutModal';
 import { logWorkflowShortcut } from '@/lib/telemetry';
+import { itemSchema } from '@/lib/validation';
 
 export default function Items() {
   const [items, setItems] = useState<any[]>([]);
@@ -78,6 +79,26 @@ export default function Items() {
     }
 
     try {
+      // Validate item data
+      const validationResult = itemSchema.safeParse({
+        name: formData.name,
+        sku: formData.sku,
+        hsn_sac_code: formData.hsn_sac_code,
+        unit_price: Number(formData.unit_price),
+        gst_rate: Number(formData.gst_rate),
+        unit_of_measure: formData.unit_of_measure,
+      });
+
+      if (!validationResult.success) {
+        const errors = validationResult.error.errors.map(e => e.message).join(', ');
+        toast({
+          title: 'Validation Error',
+          description: errors,
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const { data: newItem, error } = await supabase.from('items').insert({
         ...formData,
         business_id: selectedBusiness?.id,

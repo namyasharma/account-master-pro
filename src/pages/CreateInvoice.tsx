@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ValidationWarningBadge } from '@/components/ValidationWarningBadge';
 import { validateGstRate, validateHsnGstMatch, ValidationWarning } from '@/lib/gstValidation';
 import { logWorkflowShortcut } from '@/lib/telemetry';
+import { invoiceSchema } from '@/lib/validation';
 
 interface LineItem {
   item_id: string | null;
@@ -243,6 +244,27 @@ export default function CreateInvoice() {
     
     try {
       const { subtotal, gstAmount, total } = calculateTotals();
+
+      // Validate invoice data
+      const validationResult = invoiceSchema.safeParse({
+        invoice_number: formData.invoice_number,
+        invoice_date: formData.invoice_date,
+        buyer_name: formData.buyer_name,
+        buyer_gstin: formData.buyer_gstin,
+        subtotal,
+        gst_amount: gstAmount,
+        total,
+      });
+
+      if (!validationResult.success) {
+        const errors = validationResult.error.errors.map(e => e.message).join(', ');
+        toast({
+          title: 'Validation Error',
+          description: errors,
+          variant: 'destructive',
+        });
+        return;
+      }
 
       const { data: invoice, error: invoiceError } = await supabase
         .from('invoices')

@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ValidationWarningBadge } from '@/components/ValidationWarningBadge';
 import { validateGstRate, ValidationWarning } from '@/lib/gstValidation';
 import { logWorkflowShortcut } from '@/lib/telemetry';
+import { purchaseSchema } from '@/lib/validation';
 
 export default function CreatePurchase() {
   const [suppliers, setSuppliers] = useState<any[]>([]);
@@ -192,6 +193,27 @@ export default function CreatePurchase() {
     e.preventDefault();
     
     try {
+      // Validate purchase data
+      const validationResult = purchaseSchema.safeParse({
+        entry_number: formData.entry_number,
+        entry_date: formData.entry_date,
+        supplier_name: formData.supplier_name,
+        supplier_gstin: formData.supplier_gstin,
+        subtotal: Number(formData.subtotal),
+        gst_amount: Number(formData.gst_amount),
+        total: calculateTotal(),
+      });
+
+      if (!validationResult.success) {
+        const errors = validationResult.error.errors.map(e => e.message).join(', ');
+        toast({
+          title: 'Validation Error',
+          description: errors,
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const { error } = await supabase.from('purchase_entries').insert({
         business_id: selectedBusiness?.id,
         entry_number: formData.entry_number,
