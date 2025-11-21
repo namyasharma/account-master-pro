@@ -131,7 +131,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .from('profiles')
         .select('id')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (!existingProfile) {
         const { error: profileError } = await supabase.from('profiles').insert({
@@ -154,7 +154,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .from('user_roles')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .eq('role', 'user')
+        .maybeSingle();
 
       if (!existingRole) {
         const { error: roleError } = await supabase.from('user_roles').insert({
