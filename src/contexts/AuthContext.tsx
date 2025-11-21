@@ -134,12 +134,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
 
       if (!existingProfile) {
-        const { error: profileError } = await supabase.from('profiles').insert({
-          id: user.id,
-          email: user.email || email,
-          full_name: fullName,
-          onboarding_completed: false,
-        });
+        const { error: profileError } = await supabase.from('profiles').upsert(
+          {
+            id: user.id,
+            email: user.email || email,
+            full_name: fullName,
+            onboarding_completed: false,
+          },
+          { onConflict: 'id' }
+        );
 
         if (profileError && !isDuplicateError(profileError)) {
           console.error('Profile creation failed during signup', profileError);
@@ -158,10 +161,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .maybeSingle();
 
       if (!existingRole) {
-        const { error: roleError } = await supabase.from('user_roles').insert({
-          user_id: user.id,
-          role: 'user',
-        });
+        const { error: roleError } = await supabase.from('user_roles').upsert(
+          {
+            user_id: user.id,
+            role: 'user',
+          },
+          { onConflict: 'user_id,role' }
+        );
 
         if (roleError && !isDuplicateError(roleError)) {
           console.error('User role creation failed during signup', roleError);
