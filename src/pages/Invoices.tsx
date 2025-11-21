@@ -133,17 +133,12 @@ export default function Invoices() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm">
-        <div className="container-responsive py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <h1 className="font-bold">{t('invoices.title')}</h1>
-          <Button onClick={() => navigate('/dashboard')} size="sm" variant="outline" className="border-primary/30 hover:bg-primary/10">
-            Back to Dashboard
-          </Button>
-        </div>
+    <div className="p-responsive space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <h1 className="font-bold">{t('invoices.title')}</h1>
       </div>
 
-      <div className="container-responsive p-responsive">
+      <div className="space-y-4">
         <div className="flex gap-2 mb-4 flex-wrap">
           <Link to="/invoices/create" className="flex-1 sm:flex-none">
             <Button className="w-full" size="default">{t('invoices.create')}</Button>

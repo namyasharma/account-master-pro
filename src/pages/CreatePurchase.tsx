@@ -244,15 +244,15 @@ export default function CreatePurchase() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">{t('purchases.add')}</h1>
-          <Button onClick={() => navigate('/purchases')}>Back</Button>
-        </div>
+    <div className="p-responsive space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <h1 className="font-bold">{t('purchases.add')}</h1>
+        <Button onClick={() => navigate('/purchases')} size="sm" variant="outline" className="border-primary/30 hover:bg-primary/10">
+          Back
+        </Button>
       </div>
 
-      <div className="max-w-7xl mx-auto p-4">
+      <div className="space-y-4">
         <Card>
           <CardHeader>
             <CardTitle>Purchase Entry Details</CardTitle>
