@@ -1,11 +1,10 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './AuthContext';
 
 type Theme = 'light' | 'dark';
 
 interface ThemeContextType {
   theme: Theme;
+  setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
 }
 
@@ -13,53 +12,28 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<Theme>('light');
-  const { user } = useAuth();
 
-  // Load theme from profile or localStorage
+  // Load theme from localStorage on mount
   useEffect(() => {
-    const loadTheme = async () => {
-      if (user) {
-        // Load from profile
-        const { data } = await supabase
-          .from('profiles')
-          .select('theme')
-          .eq('id', user.id)
-          .single();
-        
-        if (data?.theme) {
-          setTheme(data.theme as Theme);
-          document.documentElement.classList.toggle('dark', data.theme === 'dark');
-        }
-      } else {
-        // Fallback to localStorage
-        const stored = localStorage.getItem('theme') as Theme;
-        if (stored) {
-          setTheme(stored);
-          document.documentElement.classList.toggle('dark', stored === 'dark');
-        }
-      }
-    };
-    
-    loadTheme();
-  }, [user]);
-
-  const toggleTheme = async () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
-    
-    // Persist to profile if user is logged in
-    if (user) {
-      await supabase
-        .from('profiles')
-        .update({ theme: newTheme })
-        .eq('id', user.id);
+    const stored = localStorage.getItem('theme') as Theme;
+    if (stored) {
+      setTheme(stored);
+      document.documentElement.classList.toggle('dark', stored === 'dark');
     }
+  }, []);
+
+  // Update localStorage and DOM when theme changes
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
