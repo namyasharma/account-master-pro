@@ -117,37 +117,57 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return (
         code === '23505' ||
         message.includes('duplicate key') ||
-        message.includes('unique constraint')
+        message.includes('unique constraint') ||
+        message.includes('already exists')
       );
     };
 
     try {
-      // Explicitly create profile record and wait for completion
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: user.id,
-        email: user.email || email,
-        full_name: fullName,
-        onboarding_completed: false,
-      });
+      // Wait a moment for database triggers to create profiles and user_roles
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-      if (profileError && !isDuplicateError(profileError)) {
-        console.error('Profile creation failed during signup', profileError);
-        const friendlyError = new Error('Failed to create user profile. Please try again.');
-        (friendlyError as any).details = profileError;
-        throw friendlyError;
+      // Verify profile exists, create as fallback if needed
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (!existingProfile) {
+        const { error: profileError } = await supabase.from('profiles').insert({
+          id: user.id,
+          email: user.email || email,
+          full_name: fullName,
+          onboarding_completed: false,
+        });
+
+        if (profileError && !isDuplicateError(profileError)) {
+          console.error('Profile creation failed during signup', profileError);
+          const friendlyError = new Error('Failed to create user profile. Please try again.');
+          (friendlyError as any).details = profileError;
+          throw friendlyError;
+        }
       }
 
-      // Explicitly create user_roles record and wait for completion
-      const { error: roleError } = await supabase.from('user_roles').insert({
-        user_id: user.id,
-        role: 'user',
-      });
+      // Verify user_roles exists, create as fallback if needed
+      const { data: existingRole } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
 
-      if (roleError && !isDuplicateError(roleError)) {
-        console.error('User role creation failed during signup', roleError);
-        const friendlyError = new Error('Failed to set user permissions. Please try again.');
-        (friendlyError as any).details = roleError;
-        throw friendlyError;
+      if (!existingRole) {
+        const { error: roleError } = await supabase.from('user_roles').insert({
+          user_id: user.id,
+          role: 'user',
+        });
+
+        if (roleError && !isDuplicateError(roleError)) {
+          console.error('User role creation failed during signup', roleError);
+          const friendlyError = new Error('Failed to set user permissions. Please try again.');
+          (friendlyError as any).details = roleError;
+          throw friendlyError;
+        }
       }
 
       // Ensure onboarding and role state are up to date immediately after signup
