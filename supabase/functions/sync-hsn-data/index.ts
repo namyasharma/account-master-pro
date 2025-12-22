@@ -115,7 +115,6 @@ Deno.serve(async (req) => {
 
     console.log(`Parsed ${records.length} HSN records`)
 
-    // Upsert records in batches
     const batchSize = 100
     let upsertedCount = 0
 
