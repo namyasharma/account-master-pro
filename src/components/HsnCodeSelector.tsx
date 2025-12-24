@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -9,20 +8,11 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface HsnCode {
-  id: string;
-  hsn_code: string;
-  description: string;
-  gst_rate: number;
-}
+import { HsnCode, searchHsnSemantic } from '@/components/HsnEmbeddings';
+import { debounce } from 'lodash';
 
 interface HsnCodeSelectorProps {
   value?: string;
@@ -35,33 +25,20 @@ export function HsnCodeSelector({ value, onSelect }: HsnCodeSelectorProps) {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const fetchHsn = useMemo(
+    () =>
+      debounce(async (q: string) => {
+        setLoading(true);
+        const results = await searchHsnSemantic(q, 50);
+        setHsnCodes(results);
+        setLoading(false);
+      }, 250),
+    []
+  );
+
   useEffect(() => {
-    fetchHsnCodes();
+    fetchHsn(searchQuery);
   }, [searchQuery]);
-
-  const fetchHsnCodes = async () => {
-    setLoading(true);
-    try {
-      let query = supabase
-        .from('hsn_codes')
-        .select('*')
-        .order('hsn_code', { ascending: true })
-        .limit(50);
-
-      if (searchQuery) {
-        query = query.or(`hsn_code.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%`);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setHsnCodes(data || []);
-    } catch (error) {
-      console.error('Error fetching HSN codes:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const selectedHsn = hsnCodes.find((code) => code.hsn_code === value);
 
@@ -78,7 +55,7 @@ export function HsnCodeSelector({ value, onSelect }: HsnCodeSelectorProps) {
             <span className="flex items-center gap-2">
               <span className="font-medium">{selectedHsn.hsn_code}</span>
               <span className="text-muted-foreground text-sm">
-                ({selectedHsn.gst_rate}%)
+                ({selectedHsn.tax_rate}%)
               </span>
             </span>
           ) : (
@@ -87,6 +64,7 @@ export function HsnCodeSelector({ value, onSelect }: HsnCodeSelectorProps) {
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
+
       <PopoverContent className="w-full p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput
@@ -95,16 +73,14 @@ export function HsnCodeSelector({ value, onSelect }: HsnCodeSelectorProps) {
             onValueChange={setSearchQuery}
           />
           <CommandList>
-            <CommandEmpty>
-              {loading ? 'Loading...' : 'No HSN code found.'}
-            </CommandEmpty>
+            <CommandEmpty>{loading ? 'Loading...' : 'No HSN code found.'}</CommandEmpty>
             <CommandGroup>
               {hsnCodes.map((code) => (
                 <CommandItem
                   key={code.id}
                   value={code.hsn_code}
                   onSelect={() => {
-                    onSelect(code.hsn_code, code.gst_rate, code.description);
+                    onSelect(code.hsn_code, code.tax_rate, code.name);
                     setOpen(false);
                   }}
                 >
@@ -118,12 +94,12 @@ export function HsnCodeSelector({ value, onSelect }: HsnCodeSelectorProps) {
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{code.hsn_code}</span>
                       <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
-                        {code.gst_rate}%
+                        {code.tax_rate}%
                       </span>
                     </div>
-                    {code.description && (
+                    {code.name && (
                       <span className="text-xs text-muted-foreground truncate">
-                        {code.description}
+                        {code.name}
                       </span>
                     )}
                   </div>

@@ -29,7 +29,7 @@ export default function Items() {
     hsn_sac_code: '',
     gst_rate: 0,
     unit_price: 0,
-    unit_of_measure: 'unit',
+    unit_of_measure: 'kg',
   });
   const { selectedBusiness } = useBusiness();
   const { t } = useLanguage();
@@ -68,7 +68,7 @@ export default function Items() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user?.id) {
       toast({
         title: 'Error',
@@ -113,18 +113,18 @@ export default function Items() {
         title: 'Success',
         description: 'Item added successfully',
       });
-      
+
       setShowForm(false);
       setCreatedItemId(newItem.id);
       setShowWorkflowModal(true);
-      
+
       setFormData({
         name: '',
         sku: '',
         hsn_sac_code: '',
         gst_rate: 0,
         unit_price: 0,
-        unit_of_measure: 'unit',
+        unit_of_measure: 'kg',
       });
       setHsnGstRate(null);
       fetchItems();
@@ -139,7 +139,7 @@ export default function Items() {
 
   const getValidationWarnings = (): ValidationWarning[] => {
     const warnings: ValidationWarning[] = [];
-    
+
     const rateWarning = validateGstRate(formData.gst_rate);
     if (rateWarning) warnings.push(rateWarning);
 
@@ -155,7 +155,7 @@ export default function Items() {
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
-
+  const hsnSearchHint = formData.name.trim();
   return (
     <div className="p-responsive space-y-4 md:space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -198,7 +198,8 @@ export default function Items() {
                     <Label htmlFor="hsn_sac_code">{t('items.hsnSac')}</Label>
                     <HsnCodeSelector
                       value={formData.hsn_sac_code}
-                      onSelect={(hsnCode, gstRate, description) => {
+                      searchHint={formData.name}
+                      onSelect={(hsnCode, gstRate) => {
                         setHsnGstRate(gstRate);
                         setFormData({
                           ...formData,
@@ -207,12 +208,13 @@ export default function Items() {
                         });
                       }}
                     />
+
                     <p className="text-xs text-muted-foreground">
                       Search by HSN/SAC code or description
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="gst_rate">{t('items.gstRate')} (%)</Label>
+                    <Label htmlFor="gst_rate">{t('items.gstRate')}</Label>
                     <Input
                       id="gst_rate"
                       type="number"
@@ -224,8 +226,8 @@ export default function Items() {
                       className={formData.hsn_sac_code ? 'bg-muted' : ''}
                     />
                     <p className="text-xs text-muted-foreground">
-                      {formData.hsn_sac_code 
-                        ? 'Auto-filled from HSN/SAC code' 
+                      {formData.hsn_sac_code
+                        ? 'Auto-filled from HSN/SAC code'
                         : 'Select HSN/SAC code to auto-fill'}
                     </p>
                   </div>

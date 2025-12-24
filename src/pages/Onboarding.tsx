@@ -8,16 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  ChevronRight, 
-  ChevronLeft, 
-  Check, 
-  Building2, 
-  Package, 
-  Users, 
+import {
+  ChevronRight,
+  ChevronLeft,
+  Check,
+  Building2,
+  Package,
+  Users,
   BarChart3,
   FileText,
-  ShoppingCart 
+  ShoppingCart
 } from 'lucide-react';
 import { businessSchema } from '@/lib/validation';
 
@@ -26,11 +26,12 @@ export default function Onboarding() {
   const [businessName, setBusinessName] = useState('');
   const [businessGSTIN, setBusinessGSTIN] = useState('');
   const [itemName, setItemName] = useState('');
+  const [itemMeasure, setItemMeasure] = useState('');
   const [itemPrice, setItemPrice] = useState('');
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { user, refreshOnboardingStatus } = useAuth();
   const { setSelectedBusiness } = useBusiness();
   const { toast } = useToast();
@@ -89,7 +90,7 @@ export default function Onboarding() {
 
     try {
       setLoading(true);
-      
+
       const validationResult = businessSchema.safeParse({
         name: businessName,
         gstin: businessGSTIN,
@@ -122,7 +123,7 @@ export default function Onboarding() {
 
       await setSelectedBusiness(data);
       setStep(step + 1);
-      
+
       toast({
         title: 'Success',
         description: 'Business created successfully',
@@ -150,7 +151,7 @@ export default function Onboarding() {
 
     try {
       setLoading(true);
-      
+
       const { data: businesses } = await supabase
         .from('businesses')
         .select('id')
@@ -172,12 +173,13 @@ export default function Onboarding() {
         .insert({
           name: itemName,
           unit_price: parseFloat(itemPrice),
+          unit_of_measure: itemMeasure,
           business_id: businesses.id,
           owner_id: user?.id,
         });
 
       if (error) throw error;
-      
+
       setStep(step + 1);
       toast({
         title: 'Success',
@@ -206,7 +208,7 @@ export default function Onboarding() {
 
     try {
       setLoading(true);
-      
+
       const { data: businesses } = await supabase
         .from('businesses')
         .select('id')
@@ -232,7 +234,7 @@ export default function Onboarding() {
         });
 
       if (error) throw error;
-      
+
       setStep(step + 1);
       toast({
         title: 'Success',
@@ -345,6 +347,16 @@ export default function Onboarding() {
                   placeholder="100.00"
                   value={itemPrice}
                   onChange={(e) => setItemPrice(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="itemPrice">Unit of Measure *</Label>
+                <Input
+                  id="item"
+                  type="text"
+                  placeholder="kg"
+                  value={itemMeasure}
+                  onChange={(e) => setItemMeasure(e.target.value)}
                 />
               </div>
               <div className="flex gap-2">
@@ -529,7 +541,7 @@ export default function Onboarding() {
             </div>
           </div>
         )}
-        
+
         {renderStep()}
       </div>
     </div>

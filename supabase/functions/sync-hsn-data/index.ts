@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
     console.log('CSV Headers:', headers)
 
     const records: HsnRecord[] = []
-    
+
     // Parse CSV rows (skip header)
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim()
@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
           description: description,
           gst_rate: gstRate
         })
-      }
+    }
     }
 
     console.log(`Parsed ${records.length} HSN records`)
@@ -122,7 +122,7 @@ Deno.serve(async (req) => {
       const batch = records.slice(i, i + batchSize)
       
       const { error } = await supabaseClient
-        .from('hsn_codes')
+        .from('hsn_code')
         .upsert(
           batch.map(record => ({
             hsn_code: record.hsn_code,
@@ -134,12 +134,12 @@ Deno.serve(async (req) => {
             onConflict: 'hsn_code',
             ignoreDuplicates: false 
           }
-        )
+      )
 
       if (error) {
         console.error(`Error upserting batch ${i / batchSize + 1}:`, error)
         throw error
-      }
+    }
 
       upsertedCount += batch.length
       console.log(`Upserted batch ${i / batchSize + 1}: ${batch.length} records (${upsertedCount}/${records.length})`)

@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .select('role')
       .eq('user_id', userId)
       .single();
-    
+
     setUserRole(data?.role || 'user');
   };
 
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .select('onboarding_completed')
       .eq('id', userId)
       .single();
-    
+
     setOnboardingCompleted(data?.onboarding_completed || false);
   };
 
@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
           setTimeout(() => {
             fetchUserRole(session.user.id);
@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
         fetchUserRole(session.user.id);
         fetchOnboardingStatus(session.user.id);
@@ -166,7 +166,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             user_id: user.id,
             role: 'user',
           },
-          { onConflict: 'user_id,role' }
+          { onConflict: 'user_id' }
         );
 
         if (roleError && !isDuplicateError(roleError)) {
@@ -176,6 +176,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           throw friendlyError;
         }
       }
+
+
 
       // Ensure onboarding and role state are up to date immediately after signup
       try {

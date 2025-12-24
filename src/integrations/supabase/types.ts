@@ -102,30 +102,42 @@ export type Database = {
           },
         ]
       }
-      hsn_codes: {
+      hsn_code: {
         Row: {
-          created_at: string | null
-          description: string | null
-          gst_rate: number
-          hsn_code: string
-          id: string
-          updated_at: string | null
+          id: string;
+          subchapter_id: string;
+          hsn_code: string;
+          name: string; // description of the HSN code
+          tax_rate: number;
+          reverse_charge?: boolean;
+          rate_type?: 'flat' | 'slab' | string;
+          threshold_amount?: number;
+          rate_below_threshold?: number;
+          rate_above_threshold?: number;
         }
         Insert: {
-          created_at?: string | null
-          description?: string | null
-          gst_rate?: number
-          hsn_code: string
-          id?: string
-          updated_at?: string | null
+          cid: string;
+          subchapter_id: string;
+          hsn_code: string;
+          name: string; // description of the HSN code
+          tax_rate: number;
+          reverse_charge?: boolean;
+          rate_type?: 'flat' | 'slab' | string;
+          threshold_amount?: number;
+          rate_below_threshold?: number;
+          rate_above_threshold?: number;
         }
         Update: {
-          created_at?: string | null
-          description?: string | null
-          gst_rate?: number
-          hsn_code?: string
-          id?: string
-          updated_at?: string | null
+          id: string;
+          subchapter_id: string;
+          hsn_code: string;
+          name: string; // description of the HSN code
+          tax_rate: number;
+          reverse_charge?: boolean;
+          rate_type?: 'flat' | 'slab' | string;
+          threshold_amount?: number;
+          rate_below_threshold?: number;
+          rate_above_threshold?: number;
         }
         Relationships: []
       }
