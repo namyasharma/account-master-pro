@@ -14,10 +14,12 @@ import { ValidationWarningBadge } from '@/components/ValidationWarningBadge';
 import { validateGstRate, validateHsnGstMatch, validateMissingHsn, ValidationWarning } from '@/lib/gstValidation';
 import { WorkflowShortcutModal } from '@/components/WorkflowShortcutModal';
 import { itemSchema } from '@/lib/validation';
+import { BarcodeScanner } from '@/components/BarcodeScanner';
+import { lookupProduct, isValidBarcode } from '@/lib/barcodeLookup'
 import {
-  Plus, X, Check, Info, CheckCircle, AlertCircle,
+  Plus, X, Check, Info, CheckCircle, AlertCircle, Scan,
   Barcode, Tag, DollarSign, Package, Edit2, Trash2, Search,
-  MoreVertical
+  MoreVertical, Sparkles, Loader2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -47,14 +49,21 @@ export default function Items() {
   const [hsnGstRate, setHsnGstRate] = useState<number | null>(null);
   const [showWorkflowModal, setShowWorkflowModal] = useState(false);
   const [createdItemId, setCreatedItemId] = useState<string | null>(null);
+
+  // Barcode scanning states
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [lookingUpProduct, setLookingUpProduct] = useState(false);
+  const [scannedBarcode, setScannedBarcode] = useState('');
+
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
     hsn_sac_code: '',
     gst_rate: 0,
     unit_price: 0,
-    unit_of_measure: 'kg',
+    unit_of_measure: 'Piece',
   });
+
   const { selectedBusiness } = useBusiness();
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -69,7 +78,6 @@ export default function Items() {
     fetchItems();
   }, [selectedBusiness]);
 
-  // Filter items based on search query
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredItems(items);
@@ -103,6 +111,60 @@ export default function Items() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBarcodeScanned = async (decodedText: string) => {
+    setScannedBarcode(decodedText);
+
+    // Validate barcode format
+    if (!isValidBarcode(decodedText)) {
+      toast({
+        title: 'Invalid Barcode',
+        description: 'The scanned barcode format is not recognized. Please enter details manually.',
+        variant: 'destructive',
+      });
+      setFormData({ ...formData, sku: decodedText });
+      return;
+    }
+
+    setLookingUpProduct(true);
+
+    try {
+      // Look up product info from barcode
+      const productInfo = await lookupProduct(decodedText);
+
+      if (productInfo && productInfo.found) {
+        // Auto-populate form with product info
+        setFormData({
+          ...formData,
+          name: productInfo.name,
+          sku: productInfo.barcode,
+        });
+
+        toast({
+          title: 'Product Found! ✨',
+          description: `${productInfo.name} ${productInfo.brand ? `by ${productInfo.brand}` : ''}`,
+        });
+      } else {
+        // Product not found, just use barcode as SKU
+        setFormData({ ...formData, sku: decodedText });
+
+        toast({
+          title: 'Barcode Scanned',
+          description: 'Product not found in database. Please enter details manually.',
+        });
+      }
+    } catch (error) {
+      console.error('Product lookup error:', error);
+      toast({
+        title: 'Lookup Failed',
+        description: 'Could not look up product. Using barcode as SKU.',
+        variant: 'destructive',
+      });
+      setFormData({ ...formData, sku: decodedText });
+    } finally {
+      setLookingUpProduct(false);
     }
   };
 
@@ -181,7 +243,6 @@ export default function Items() {
       }
 
       if (editingItem) {
-        // Update existing item
         const { error } = await supabase
           .from('items')
           .update({
@@ -198,7 +259,6 @@ export default function Items() {
           description: 'Item updated successfully',
         });
       } else {
-        // Create new item
         const { data: newItem, error } = await supabase.from('items').insert({
           ...formData,
           business_id: selectedBusiness?.id,
@@ -226,9 +286,10 @@ export default function Items() {
         hsn_sac_code: '',
         gst_rate: 0,
         unit_price: 0,
-        unit_of_measure: 'kg',
+        unit_of_measure: 'Piece',
       });
       setHsnGstRate(null);
+      setScannedBarcode('');
       fetchItems();
     } catch (error: any) {
       toast({
@@ -248,9 +309,10 @@ export default function Items() {
       hsn_sac_code: '',
       gst_rate: 0,
       unit_price: 0,
-      unit_of_measure: 'kg',
+      unit_of_measure: 'Piece',
     });
     setHsnGstRate(null);
+    setScannedBarcode('');
   };
 
   const getValidationWarnings = (): ValidationWarning[] => {
@@ -388,6 +450,46 @@ export default function Items() {
             </CardHeader>
             <CardContent className="pt-6">
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Barcode Scanner Button */}
+                <Card className="border-2 border-dashed border-purple-200 bg-gradient-to-br from-purple-50/50 to-blue-50/50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
+                          <Scan className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-800 flex items-center gap-2">
+                            Quick Add with Barcode
+                            <Sparkles className="h-4 w-4 text-purple-500" />
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {scannedBarcode ? `Scanned: ${scannedBarcode}` : 'Scan to auto-populate item details'}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={() => setShowBarcodeScanner(true)}
+                        disabled={lookingUpProduct}
+                        className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600"
+                      >
+                        {lookingUpProduct ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Looking up...
+                          </>
+                        ) : (
+                          <>
+                            <Barcode className="mr-2 h-4 w-4" />
+                            Scan Barcode
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-sm font-semibold text-slate-700">
@@ -404,8 +506,9 @@ export default function Items() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="sku" className="text-sm font-semibold text-slate-700">
+                    <Label htmlFor="sku" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                       {t('items.sku')}
+                      {scannedBarcode && <CheckCircle className="h-4 w-4 text-emerald-500" />}
                     </Label>
                     <Input
                       id="sku"
@@ -599,80 +702,11 @@ export default function Items() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-
-                  <div className="space-y-2">
-                    {item.hsn_sac_code && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-500">HSN/SAC:</span>
-                        <span className="font-medium text-slate-700 font-mono">{item.hsn_sac_code}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-500">GST Rate:</span>
-                      <span className="font-semibold text-purple-600">{Number(item.gst_rate).toFixed(2)}%</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-500">Unit:</span>
-                      <span className="font-medium text-slate-700">{item.unit_of_measure}</span>
-                    </div>
-                  </div>
-
-                  <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-500">Unit Price</span>
-                    <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                      ₹{Number(item.unit_price).toFixed(2)}
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
-
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={!!deleteItemId} onOpenChange={(open) => !open && setDeleteItemId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the item from your inventory.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDelete}
-                className="bg-red-600 hover:bg-red-700"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        {/* Workflow Modal */}
-        <WorkflowShortcutModal
-          open={showWorkflowModal}
-          onOpenChange={(open) => {
-            setShowWorkflowModal(open);
-            if (!open) setCreatedItemId(null);
-          }}
-          title="Item created successfully!"
-          description="What would you like to do next?"
-          actions={[
-            {
-              label: 'Create Purchase',
-              path: `/purchases/create?prefillItemId=${createdItemId}`,
-            },
-            {
-              label: 'Create Invoice',
-              path: `/invoices/create?prefillItemId=${createdItemId}`,
-            },
-          ]}
-        />
       </div>
-    </div>
-  );
+    </div>);
 }

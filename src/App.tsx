@@ -21,6 +21,7 @@ import Purchases from "./pages/Purchases";
 import CreatePurchase from "./pages/CreatePurchase";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import SimpleBarcodeTest from '@/pages/SimpleBarcodeTest';
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => (
                   <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
                   <Route path="/purchases/create" element={<ProtectedRoute><CreatePurchase /></ProtectedRoute>} />
                   <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                  <Route path="/barcode-test" element={<ProtectedRoute><SimpleBarcodeTest /></ProtectedRoute>} />
                   <Route path="/" element={<Navigate to="/auth" replace />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

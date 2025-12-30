@@ -5,16 +5,17 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function BottomNav() {
   const { userRole } = useAuth();
-  
+
   const navItems = [
     { to: '/dashboard', icon: Home, label: 'Dashboard', roles: ['admin', 'user'] },
     { to: '/items', icon: Package, label: 'Items', roles: ['admin', 'user'] },
     { to: '/invoices', icon: FileText, label: 'Invoices', roles: ['admin', 'user'] },
     { to: '/purchases', icon: ShoppingCart, label: 'Purchases', roles: ['admin'] },
     { to: '/settings', icon: Settings, label: 'Settings', roles: ['admin', 'user'] },
+    { to: '/barcode-test', icon: Settings, label: 'Barcode Test', roles: ['admin', 'user'] },
   ];
 
-  const visibleItems = navItems.filter(item => 
+  const visibleItems = navItems.filter(item =>
     userRole && item.roles.includes(userRole)
   );
 

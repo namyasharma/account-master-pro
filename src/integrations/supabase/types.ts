@@ -58,6 +58,24 @@ export type Database = {
           },
         ]
       }
+      chapter: {
+        Row: {
+          chapter_id: number
+          id: string
+          name: string
+        }
+        Insert: {
+          chapter_id: number
+          id?: string
+          name: string
+        }
+        Update: {
+          chapter_id?: number
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -102,42 +120,107 @@ export type Database = {
           },
         ]
       }
-      hsn_code: {
+      feature_usage: {
         Row: {
-          id: string;
-          subchapter_id: string;
-          hsn_code: string;
-          name: string; // description of the HSN code
-          tax_rate: number;
-          reverse_charge?: boolean;
-          rate_type?: 'flat' | 'slab' | string;
-          threshold_amount?: number;
-          rate_below_threshold?: number;
-          rate_above_threshold?: number;
+          barcode_scan_count: number | null
+          created_at: string | null
+          customer_count: number | null
+          id: string
+          invoice_count: number | null
+          item_count: number | null
+          last_reset_date: string | null
+          user_id: string
         }
         Insert: {
-          cid: string;
-          subchapter_id: string;
-          hsn_code: string;
-          name: string; // description of the HSN code
-          tax_rate: number;
-          reverse_charge?: boolean;
-          rate_type?: 'flat' | 'slab' | string;
-          threshold_amount?: number;
-          rate_below_threshold?: number;
-          rate_above_threshold?: number;
+          barcode_scan_count?: number | null
+          created_at?: string | null
+          customer_count?: number | null
+          id?: string
+          invoice_count?: number | null
+          item_count?: number | null
+          last_reset_date?: string | null
+          user_id: string
         }
         Update: {
-          id: string;
-          subchapter_id: string;
-          hsn_code: string;
-          name: string; // description of the HSN code
-          tax_rate: number;
-          reverse_charge?: boolean;
-          rate_type?: 'flat' | 'slab' | string;
-          threshold_amount?: number;
-          rate_below_threshold?: number;
-          rate_above_threshold?: number;
+          barcode_scan_count?: number | null
+          created_at?: string | null
+          customer_count?: number | null
+          id?: string
+          invoice_count?: number | null
+          item_count?: number | null
+          last_reset_date?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hsn_code: {
+        Row: {
+          embedding: string | null
+          hsn_code: string
+          id: string
+          name: string
+          rate_above_threshold: number | null
+          rate_below_threshold: number | null
+          rate_type: string
+          reverse_charge: boolean
+          subchapter_id: string
+          subchapter_id_int: number | null
+          tax_rate: number
+          threshold_amount: number | null
+        }
+        Insert: {
+          embedding?: string | null
+          hsn_code: string
+          id?: string
+          name: string
+          rate_above_threshold?: number | null
+          rate_below_threshold?: number | null
+          rate_type?: string
+          reverse_charge?: boolean
+          subchapter_id: string
+          subchapter_id_int?: number | null
+          tax_rate: number
+          threshold_amount?: number | null
+        }
+        Update: {
+          embedding?: string | null
+          hsn_code?: string
+          id?: string
+          name?: string
+          rate_above_threshold?: number | null
+          rate_below_threshold?: number | null
+          rate_type?: string
+          reverse_charge?: boolean
+          subchapter_id?: string
+          subchapter_id_int?: number | null
+          tax_rate?: number
+          threshold_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hsn_code_subchapter_id_fkey"
+            columns: ["subchapter_id"]
+            isOneToOne: false
+            referencedRelation: "subchapter"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_subchapter: {
+        Row: {
+          chapter_id: number | null
+          name: string | null
+          subchapter_id: number | null
+        }
+        Insert: {
+          chapter_id?: number | null
+          name?: string | null
+          subchapter_id?: number | null
+        }
+        Update: {
+          chapter_id?: number | null
+          name?: string | null
+          subchapter_id?: number | null
         }
         Relationships: []
       }
@@ -164,7 +247,7 @@ export type Database = {
           item_id?: string | null
           line_total?: number
           quantity?: number
-          unit_price?: number
+          unit_price: number
         }
         Update: {
           created_at?: string | null
@@ -218,7 +301,7 @@ export type Database = {
           customer_id?: string | null
           gst_amount?: number
           id?: string
-          invoice_date?: string
+          invoice_date: string
           invoice_number: string
           subtotal?: number
           total?: number
@@ -282,8 +365,8 @@ export type Database = {
           name: string
           owner_id: string
           sku?: string | null
-          unit_of_measure?: string
-          unit_price?: number
+          unit_of_measure: string
+          unit_price: number
           updated_at?: string | null
         }
         Update: {
@@ -311,6 +394,50 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number | null
+          currency: string | null
+          id: string
+          payment_date: string | null
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          status: string | null
+          subscription_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          currency?: string | null
+          id?: string
+          payment_date?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          status?: string | null
+          subscription_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          currency?: string | null
+          id?: string
+          payment_date?: string | null
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          status?: string | null
+          subscription_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -325,7 +452,7 @@ export type Database = {
           created_at?: string | null
           email: string
           full_name?: string | null
-          id: string
+          id?: string
           onboarding_completed?: boolean | null
           theme?: string | null
           updated_at?: string | null
@@ -359,7 +486,7 @@ export type Database = {
         Insert: {
           business_id: string
           created_at?: string | null
-          entry_date?: string
+          entry_date: string
           entry_number: string
           gst_amount?: number
           id?: string
@@ -400,6 +527,101 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      state_code: {
+        Row: {
+          code: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      subchapter: {
+        Row: {
+          chapter_id: string
+          chapter_id_int: number | null
+          id: string
+          name: string
+          subchapter_id: number
+        }
+        Insert: {
+          chapter_id: string
+          chapter_id_int?: number | null
+          id?: string
+          name: string
+          subchapter_id: number
+        }
+        Update: {
+          chapter_id?: string
+          chapter_id_int?: number | null
+          id?: string
+          name?: string
+          subchapter_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subchapter_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapter"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          created_at: string | null
+          id: string
+          plan: string | null
+          razorpay_customer_id: string | null
+          razorpay_subscription_id: string | null
+          status: string | null
+          subscription_end_date: string | null
+          subscription_start_date: string | null
+          trial_end_date: string | null
+          trial_start_date: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          plan?: string | null
+          razorpay_customer_id?: string | null
+          razorpay_subscription_id?: string | null
+          status?: string | null
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          trial_end_date?: string | null
+          trial_start_date?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          plan?: string | null
+          razorpay_customer_id?: string | null
+          razorpay_subscription_id?: string | null
+          status?: string | null
+          subscription_end_date?: string | null
+          subscription_start_date?: string | null
+          trial_end_date?: string | null
+          trial_start_date?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       suppliers: {
         Row: {
@@ -495,6 +717,45 @@ export type Database = {
           },
         ]
       }
+      temp_hsn: {
+        Row: {
+          hsn_code: number
+          id: string
+          name: string | null
+          rate_above_threshold: number | null
+          rate_below_threshold: number | null
+          rate_type: string
+          reverse_charge: boolean | null
+          subchapter_id: number
+          tax_rate: number | null
+          threshold_amount: number | null
+        }
+        Insert: {
+          hsn_code: number
+          id?: string
+          name?: string | null
+          rate_above_threshold?: number | null
+          rate_below_threshold?: number | null
+          rate_type?: string
+          reverse_charge?: boolean | null
+          subchapter_id: number
+          tax_rate?: number | null
+          threshold_amount?: number | null
+        }
+        Update: {
+          hsn_code?: number
+          id?: string
+          name?: string | null
+          rate_above_threshold?: number | null
+          rate_below_threshold?: number | null
+          rate_type?: string
+          reverse_charge?: boolean | null
+          subchapter_id?: number
+          tax_rate?: number | null
+          threshold_amount?: number | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -521,12 +782,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
+      check_feature_access: {
+        Args: { p_feature: string; p_user_id: string }
         Returns: boolean
+      }
+      increment_usage: {
+        Args: { p_usage_type: string; p_user_id: string }
+        Returns: undefined
+      }
+      match_hsn_semantic: {
+        Args: { match_count?: number; query_vector: string }
+        Returns: {
+          hsn_code: string
+          id: string
+          name: string
+          rate_above_threshold: number
+          rate_below_threshold: number
+          rate_type: string
+          reverse_charge: boolean
+          similarity: number
+          subchapter_id: string
+          tax_rate: number
+          threshold_amount: number
+        }[]
       }
     }
     Enums: {
