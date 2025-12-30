@@ -65,7 +65,7 @@ export function HsnCodeSelector({ value, onSelect }: HsnCodeSelectorProps) {
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-full p-0" align="start">
+      <PopoverContent className="p-0" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
         <Command shouldFilter={false}>
           <CommandInput
             placeholder="Search HSN code or description..."
