@@ -15,11 +15,13 @@ import { validateGstRate, validateHsnGstMatch, validateMissingHsn, ValidationWar
 import { WorkflowShortcutModal } from '@/components/WorkflowShortcutModal';
 import { itemSchema } from '@/lib/validation';
 import { BarcodeScanner } from '@/components/BarcodeScanner';
-import { lookupProduct, isValidBarcode } from '@/lib/barcodeLookup'
+import { lookupProduct, isValidBarcode } from '@/lib/productLookup';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { useSubscription } from '@/hooks/useSubscription';
 import {
   Plus, X, Check, Info, CheckCircle, AlertCircle, Scan,
   Barcode, Tag, DollarSign, Package, Edit2, Trash2, Search,
-  MoreVertical, Sparkles, Loader2
+  MoreVertical, Sparkles, Loader2, Lock
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -54,6 +56,10 @@ export default function Items() {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [lookingUpProduct, setLookingUpProduct] = useState(false);
   const [scannedBarcode, setScannedBarcode] = useState('');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // Subscription & feature access
+  const { hasFeatureAccess, trackUsage, checkUsageLimit, currentPlan } = useSubscription();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -116,6 +122,9 @@ export default function Items() {
 
   const handleBarcodeScanned = async (decodedText: string) => {
     setScannedBarcode(decodedText);
+
+    // Track usage for analytics
+    trackUsage('barcode');
 
     // Validate barcode format
     if (!isValidBarcode(decodedText)) {
@@ -222,6 +231,20 @@ export default function Items() {
       return;
     }
 
+    // Check item limit for free tier
+    if (!editingItem) {
+      const itemLimit = checkUsageLimit('item');
+      if (!itemLimit.allowed) {
+        toast({
+          title: 'Item Limit Reached',
+          description: `You've reached the limit of ${itemLimit.limit} items on the free plan. Upgrade to add unlimited items.`,
+          variant: 'destructive',
+        });
+        setShowUpgradeModal(true);
+        return;
+      }
+    }
+
     try {
       const validationResult = itemSchema.safeParse({
         name: formData.name,
@@ -268,6 +291,9 @@ export default function Items() {
         }).select().single();
 
         if (error) throw error;
+
+        // Track usage for new item
+        trackUsage('item');
 
         toast({
           title: 'Success',
@@ -461,23 +487,47 @@ export default function Items() {
                         <div>
                           <p className="font-semibold text-slate-800 flex items-center gap-2">
                             Quick Add with Barcode
-                            <Sparkles className="h-4 w-4 text-purple-500" />
+                            {!hasFeatureAccess('barcode_scanning') ? (
+                              <Lock className="h-4 w-4 text-purple-500" />
+                            ) : (
+                              <Sparkles className="h-4 w-4 text-purple-500" />
+                            )}
                           </p>
                           <p className="text-xs text-slate-500">
-                            {scannedBarcode ? `Scanned: ${scannedBarcode}` : 'Scan to auto-populate item details'}
+                            {scannedBarcode 
+                              ? `Scanned: ${scannedBarcode}` 
+                              : hasFeatureAccess('barcode_scanning')
+                                ? 'Scan to auto-populate item details'
+                                : `Available on Starter plan and above • Current: ${currentPlan}`
+                            }
                           </p>
                         </div>
                       </div>
                       <Button
                         type="button"
-                        onClick={() => setShowBarcodeScanner(true)}
+                        onClick={() => {
+                          if (!hasFeatureAccess('barcode_scanning')) {
+                            setShowUpgradeModal(true);
+                          } else {
+                            setShowBarcodeScanner(true);
+                          }
+                        }}
                         disabled={lookingUpProduct}
-                        className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600"
+                        className={
+                          hasFeatureAccess('barcode_scanning')
+                            ? "bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600"
+                            : "bg-gradient-to-r from-slate-400 to-slate-500"
+                        }
                       >
                         {lookingUpProduct ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Looking up...
+                          </>
+                        ) : !hasFeatureAccess('barcode_scanning') ? (
+                          <>
+                            <Lock className="mr-2 h-4 w-4" />
+                            Unlock Feature
                           </>
                         ) : (
                           <>
@@ -506,6 +556,95 @@ export default function Items() {
                   </div>
 
                   <div className="space-y-2">
+                    {item.hsn_sac_code && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-500">HSN/SAC:</span>
+                        <span className="font-medium text-slate-700 font-mono">{item.hsn_sac_code}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500">GST Rate:</span>
+                      <span className="font-semibold text-purple-600">{Number(item.gst_rate).toFixed(2)}%</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500">Unit:</span>
+                      <span className="font-medium text-slate-700">{item.unit_of_measure}</span>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-500">Unit Price</span>
+                    <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                      ₹{Number(item.unit_price).toFixed(2)}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Barcode Scanner Modal */}
+        <BarcodeScanner
+          isOpen={showBarcodeScanner}
+          onScan={handleBarcodeScanned}
+          onClose={() => setShowBarcodeScanner(false)}
+        />
+
+        {/* Upgrade Prompt Modal */}
+        <UpgradePrompt
+          open={showUpgradeModal}
+          onOpenChange={setShowUpgradeModal}
+          feature="barcode_scanning"
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deleteItemId} onOpenChange={(open) => !open && setDeleteItemId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the item from your inventory.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Workflow Modal */}
+        <WorkflowShortcutModal
+          open={showWorkflowModal}
+          onOpenChange={(open) => {
+            setShowWorkflowModal(open);
+            if (!open) setCreatedItemId(null);
+          }}
+          title="Item created successfully!"
+          description="What would you like to do next?"
+          actions={[
+            {
+              label: 'Create Purchase',
+              path: `/purchases/create?prefillItemId=${createdItemId}`,
+            },
+            {
+              label: 'Create Invoice',
+              path: `/invoices/create?prefillItemId=${createdItemId}`,
+            },
+          ]}
+        />
+      </div>
+    </div>
+  );
+}  <div className="space-y-2">
                     <Label htmlFor="sku" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
                       {t('items.sku')}
                       {scannedBarcode && <CheckCircle className="h-4 w-4 text-emerald-500" />}
@@ -627,86 +766,80 @@ export default function Items() {
                     {t('common.cancel')}
                   </Button>
                 </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Items Grid */}
-        {filteredItems.length === 0 ? (
-          <Card className="border-0 shadow-lg bg-white/80 backdrop-blur">
-            <CardContent className="p-12 text-center">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mx-auto mb-4">
-                {searchQuery ? <Search className="h-10 w-10 text-slate-400" /> : <Package className="h-10 w-10 text-slate-400" />}
-              </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">
-                {searchQuery ? 'No items found' : 'No items yet'}
-              </h3>
-              <p className="text-slate-500 mb-6">
-                {searchQuery ? 'Try a different search term' : 'Add your first item to get started'}
-              </p>
-              {!searchQuery && (
-                <Button
-                  onClick={() => setShowForm(true)}
-                  className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-lg shadow-purple-500/30"
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Item
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredItems.map((item) => (
-              <Card
-                key={item.id}
-                className="group relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 bg-white"
-              >
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
-
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center flex-shrink-0">
-                      <Package className="h-6 w-6 text-purple-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-slate-800 truncate">
-                        {item.name}
-                      </h3>
-                      {item.sku && (
-                        <p className="text-xs text-slate-500 font-mono flex items-center gap-1">
-                          <Barcode className="h-3 w-3" />
-                          {item.sku}
-                        </p>
-                      )}
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(item)}>
-                          <Edit2 className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => setDeleteItemId(item.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>);
+              </form >
+            </CardContent >
+          </Card >
+        )
 }
+
+{/* Items Grid */ }
+{
+  filteredItems.length === 0 ? (
+    <Card className="border-0 shadow-lg bg-white/80 backdrop-blur">
+      <CardContent className="p-12 text-center">
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mx-auto mb-4">
+          {searchQuery ? <Search className="h-10 w-10 text-slate-400" /> : <Package className="h-10 w-10 text-slate-400" />}
+        </div>
+        <h3 className="text-xl font-bold text-slate-800 mb-2">
+          {searchQuery ? 'No items found' : 'No items yet'}
+        </h3>
+        <p className="text-slate-500 mb-6">
+          {searchQuery ? 'Try a different search term' : 'Add your first item to get started'}
+        </p>
+        {!searchQuery && (
+          <Button
+            onClick={() => setShowForm(true)}
+            className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-lg shadow-purple-500/30"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add Item
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  ) : (
+  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    {filteredItems.map((item) => (
+      <Card
+        key={item.id}
+        className="group relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 bg-white"
+      >
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center flex-shrink-0">
+              <Package className="h-6 w-6 text-purple-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-bold text-slate-800 truncate">
+                {item.name}
+              </h3>
+              {item.sku && (
+                <p className="text-xs text-slate-500 font-mono flex items-center gap-1">
+                  <Barcode className="h-3 w-3" />
+                  {item.sku}
+                </p>
+              )}
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleEdit(item)}>
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setDeleteItemId(item.id)}
+                  className="text-red-600"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
