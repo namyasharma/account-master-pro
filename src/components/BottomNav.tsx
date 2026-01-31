@@ -1,4 +1,4 @@
-import { Home, Package, FileText, Settings, ShoppingCart } from 'lucide-react';
+import { Home, Package, FileText, Settings, ShoppingCart, IndianRupee } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,6 +13,7 @@ export default function BottomNav() {
     { to: '/purchases', icon: ShoppingCart, label: 'Purchases', roles: ['admin'] },
     { to: '/settings', icon: Settings, label: 'Settings', roles: ['admin', 'user'] },
     { to: '/barcode-test', icon: Settings, label: 'Barcode Test', roles: ['admin', 'user'] },
+    { to: '/pricing', icon: IndianRupee, label: 'Pricing', roles: ['admin', 'user'] },
   ];
 
   const visibleItems = navItems.filter(item =>

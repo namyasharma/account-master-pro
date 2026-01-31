@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { AnomalyDetection } from '@/components/AnomalyDetection';
 import { Package, Truck, Users, FileText, Calendar, TrendingUp, ShoppingCart, TrendingDown, DollarSign, ArrowRight } from 'lucide-react';
+import { useSubscription } from '@/hooks/useSubscription';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -20,6 +21,7 @@ export default function Dashboard() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currentPlan, isTrialing, trialDaysRemaining } = useSubscription();
 
   useEffect(() => {
     if (!selectedBusiness) {
@@ -100,7 +102,44 @@ export default function Dashboard() {
             </Button>
           </div>
         </div>
-
+        {/* Show upgrade banner for free users */}
+        {currentPlan === 'free' && (
+          <Card className="bg-gradient-to-r from-purple-600 to-purple-500 text-white">
+            <CardContent className="p-6">
+              <h3 className="text-xl font-bold mb-2">
+                Unlock Premium Features
+              </h3>
+              <p className="mb-4">
+                Get barcode scanning, unlimited invoices, and more!
+              </p>
+              <Button
+                onClick={() => navigate('/pricing')}
+                className="bg-white text-purple-600"
+              >
+                View Plans
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+        {/* Show trial expiry for trialing users */}
+        {isTrialing && trialDaysRemaining <= 3 && (
+          <Card className="bg-amber-50 border-2 border-amber-200">
+            <CardContent className="p-6">
+              <h3 className="text-xl font-bold mb-2 text-amber-900">
+                ⏰ Trial Ending Soon
+              </h3>
+              <p className="text-amber-800 mb-4">
+                Only {trialDaysRemaining} days left in your trial. Upgrade to keep your premium features.
+              </p>
+              <Button
+                onClick={() => navigate('/pricing')}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                Choose a Plan
+              </Button>
+            </CardContent>
+          </Card>
+        )}
         {/* Stats Cards */}
         <div className="grid gap-4 md:gap-6 grid-cols-1 md:grid-cols-3">
           {/* Total Sales Card */}

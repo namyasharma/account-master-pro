@@ -9,22 +9,24 @@ import {
 import { Button } from '@/components/ui/button';
 
 interface WorkflowShortcutModalProps {
+  createdItemId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   description: string;
-  actions: {
+  actions?: {
     label: string;
     path: string;
   }[];
 }
+
 
 export function WorkflowShortcutModal({
   open,
   onOpenChange,
   title,
   description,
-  actions,
+  actions = [],
 }: WorkflowShortcutModalProps) {
   const navigate = useNavigate();
 

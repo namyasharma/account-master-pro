@@ -15,13 +15,14 @@ import {
     CheckCircle,
     ArrowRight,
     Crown,
-    Lock
+    Lock,
+    ClipboardList
 } from 'lucide-react';
 
 interface UpgradePromptProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    feature: 'barcode_scanning' | 'unlimited_invoices' | 'advanced_analytics' | 'multi_user';
+    feature: 'barcode_scanning' | 'unlimited_invoices' | 'unlimited_items' | 'advanced_analytics' | 'multi_user';
     featureName?: string;
     featureDescription?: string;
 }
@@ -45,6 +46,17 @@ const FEATURE_DETAILS = {
         benefits: [
             'No limits on invoice creation',
             'Professional invoice templates',
+            'Automatic numbering',
+            'PDF generation',
+        ],
+    },
+    unlimited_items: {
+        name: 'Unlimited items',
+        description: 'Add unlimited items without any monthly restrictions',
+        icon: ClipboardList,
+        benefits: [
+            'No limits on item creation',
+            'Professional item templates',
             'Automatic numbering',
             'PDF generation',
         ],

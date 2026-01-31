@@ -22,6 +22,11 @@ export default defineConfig(({ mode }) => ({
         display: 'standalone',
         start_url: '/',
         icons: [{src: '/placeholder.svg', sizes: '512x512', type: 'image/svg+xml'}]
+      },
+      workbox: {
+        maximumFileSizeToCacheInBytes: 3000000, // Increase to 3MB
+        // Or disable precaching for large files:
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}']
       }
     })
   ].filter(Boolean),

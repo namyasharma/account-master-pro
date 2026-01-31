@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+serve(async (req: { method: string; headers: { get: (arg0: string) => any; }; url: string | URL; }) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -40,6 +40,7 @@ serve(async (req) => {
       });
     }
 
+    // Fetch invoice with business details
     const { data: invoice } = await supabaseClient
       .from('invoices')
       .select(`
@@ -56,6 +57,7 @@ serve(async (req) => {
       });
     }
 
+    // Check access
     const { data: business } = await supabaseClient
       .from('businesses')
       .select('owner_id')
@@ -69,349 +71,82 @@ serve(async (req) => {
       });
     }
 
+    // Fetch line items
     const { data: lineItems } = await supabaseClient
       .from('invoice_line_items')
       .select('*')
       .eq('invoice_id', invoice.id);
 
+    // Generate HTML invoice
     const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tax Invoice - ${invoice.invoice_number}</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      padding: 40px;
-      max-width: 210mm;
-      margin: 0 auto;
-    }
-    
-    .invoice-container {
-      border: 2px solid #2c3e50;
-      padding: 0;
-    }
-    
-    .invoice-header {
-      background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-      color: white;
-      padding: 30px;
-      text-align: center;
-    }
-    
-    .invoice-title {
-      font-size: 32px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      margin-bottom: 5px;
-    }
-    
-    .invoice-subtitle {
-      font-size: 14px;
-      opacity: 0.9;
-      letter-spacing: 1px;
-    }
-    
-    .content-section {
-      padding: 30px;
-    }
-    
-    .business-info {
-      margin-bottom: 30px;
-      padding-bottom: 20px;
-      border-bottom: 2px solid #ecf0f1;
-    }
-    
-    .company-name {
-      font-size: 24px;
-      font-weight: 700;
-      color: #2c3e50;
-      margin-bottom: 10px;
-    }
-    
-    .info-row {
-      display: flex;
-      gap: 10px;
-      margin: 5px 0;
-      font-size: 14px;
-      color: #555;
-    }
-    
-    .info-label {
-      font-weight: 600;
-      min-width: 80px;
-    }
-    
-    .two-column {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 30px;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
-      border-bottom: 2px solid #ecf0f1;
-    }
-    
-    .column-header {
-      font-size: 16px;
-      font-weight: 700;
-      color: #2c3e50;
-      margin-bottom: 15px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #3498db;
-    }
-    
-    .detail-row {
-      margin: 8px 0;
-      font-size: 14px;
-    }
-    
-    .detail-label {
-      font-weight: 600;
-      color: #555;
-      display: inline-block;
-      min-width: 120px;
-    }
-    
-    .detail-value {
-      color: #333;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0;
-      font-size: 14px;
-    }
-    
-    thead {
-      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-      color: white;
-    }
-    
-    th {
-      padding: 15px 10px;
-      text-align: left;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      border: none;
-    }
-    
-    th:last-child,
-    td:last-child {
-      text-align: right;
-    }
-    
-    tbody tr {
-      border-bottom: 1px solid #ecf0f1;
-    }
-    
-    tbody tr:hover {
-      background-color: #f8f9fa;
-    }
-    
-    td {
-      padding: 12px 10px;
-      color: #555;
-    }
-    
-    .item-description {
-      font-weight: 500;
-      color: #2c3e50;
-    }
-    
-    .totals-section {
-      margin-top: 30px;
-      display: flex;
-      justify-content: flex-end;
-    }
-    
-    .totals-box {
-      min-width: 350px;
-      border: 2px solid #ecf0f1;
-      border-radius: 4px;
-    }
-    
-    .total-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 12px 20px;
-      border-bottom: 1px solid #ecf0f1;
-    }
-    
-    .total-row:last-child {
-      border-bottom: none;
-    }
-    
-    .total-label {
-      font-weight: 600;
-      color: #555;
-    }
-    
-    .total-value {
-      font-weight: 600;
-      color: #2c3e50;
-    }
-    
-    .grand-total {
-      background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-      color: white;
-      font-size: 18px;
-      font-weight: 700;
-    }
-    
-    .grand-total .total-label,
-    .grand-total .total-value {
-      color: white;
-    }
-    
-    .footer {
-      margin-top: 40px;
-      padding-top: 20px;
-      border-top: 2px solid #ecf0f1;
-      text-align: center;
-      font-size: 12px;
-      color: #7f8c8d;
-    }
-    
-    @media print {
-      body {
-        padding: 0;
-      }
-      
-      .invoice-container {
-        border: none;
-      }
-      
-      tbody tr:hover {
-        background-color: transparent;
-      }
-    }
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    .header { text-align: center; margin-bottom: 30px; }
+    .company { font-size: 24px; font-weight: bold; }
+    .invoice-details { margin: 20px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background-color: #4CAF50; color: white; }
+    .totals { text-align: right; margin-top: 20px; }
+    .total-row { font-weight: bold; font-size: 18px; }
   </style>
 </head>
 <body>
-  <div class="invoice-container">
-    <div class="invoice-header">
-      <div class="invoice-title">TAX INVOICE</div>
-      <div class="invoice-subtitle">GST Compliant Invoice</div>
-    </div>
-    
-    <div class="content-section">
-      <div class="business-info">
-        <div class="company-name">${invoice.businesses.name}</div>
-        ${invoice.businesses.address ? `<div class="info-row"><span class="info-label">Address:</span> ${invoice.businesses.address}</div>` : ''}
-        ${invoice.businesses.gstin ? `<div class="info-row"><span class="info-label">GSTIN:</span> ${invoice.businesses.gstin}</div>` : ''}
-        ${invoice.businesses.phone ? `<div class="info-row"><span class="info-label">Phone:</span> ${invoice.businesses.phone}</div>` : ''}
-        ${invoice.businesses.email ? `<div class="info-row"><span class="info-label">Email:</span> ${invoice.businesses.email}</div>` : ''}
-      </div>
-      
-      <div class="two-column">
-        <div>
-          <div class="column-header">Invoice Details</div>
-          <div class="detail-row">
-            <span class="detail-label">Invoice Number:</span>
-            <span class="detail-value">${invoice.invoice_number}</span>
-          </div>
-          <div class="detail-row">
-            <span class="detail-label">Invoice Date:</span>
-            <span class="detail-value">${new Date(invoice.invoice_date).toLocaleDateString('en-IN', { 
-              day: '2-digit', 
-              month: 'short', 
-              year: 'numeric' 
-            })}</span>
-          </div>
-        </div>
-        
-        <div>
-          <div class="column-header">Bill To</div>
-          <div class="detail-row">
-            <span class="detail-label">Name:</span>
-            <span class="detail-value">${invoice.buyer_name}</span>
-          </div>
-          ${invoice.buyer_gstin ? `
-          <div class="detail-row">
-            <span class="detail-label">GSTIN:</span>
-            <span class="detail-value">${invoice.buyer_gstin}</span>
-          </div>` : ''}
-          ${invoice.buyer_address ? `
-          <div class="detail-row">
-            <span class="detail-label">Address:</span>
-            <span class="detail-value">${invoice.buyer_address}</span>
-          </div>` : ''}
-        </div>
-      </div>
-      
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 5%">#</th>
-            <th style="width: 35%">Description</th>
-            <th style="width: 10%">Qty</th>
-            <th style="width: 12%">Rate</th>
-            <th style="width: 12%">Amount</th>
-            <th style="width: 10%">GST %</th>
-            <th style="width: 12%">GST Amt</th>
-            <th style="width: 14%">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${(lineItems || []).map((item, index) => `
-            <tr>
-              <td>${index + 1}</td>
-              <td class="item-description">${item.description || '-'}</td>
-              <td>${Number(item.quantity).toFixed(2)}</td>
-              <td>₹${Number(item.unit_price).toFixed(2)}</td>
-              <td>₹${(Number(item.quantity) * Number(item.unit_price)).toFixed(2)}</td>
-              <td>${Number(item.gst_rate).toFixed(2)}%</td>
-              <td>₹${Number(item.gst_amount).toFixed(2)}</td>
-              <td>₹${Number(item.line_total).toFixed(2)}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-      
-      <div class="totals-section">
-        <div class="totals-box">
-          <div class="total-row">
-            <span class="total-label">Subtotal</span>
-            <span class="total-value">₹${Number(invoice.subtotal).toFixed(2)}</span>
-          </div>
-          <div class="total-row">
-            <span class="total-label">GST Amount</span>
-            <span class="total-value">₹${Number(invoice.gst_amount).toFixed(2)}</span>
-          </div>
-          <div class="total-row grand-total">
-            <span class="total-label">Grand Total</span>
-            <span class="total-value">₹${Number(invoice.total).toFixed(2)}</span>
-          </div>
-        </div>
-      </div>
-      
-      <div class="footer">
-        <p>This is a computer-generated invoice and does not require a signature.</p>
-        <p>Thank you for your business!</p>
-      </div>
-    </div>
+  <div class="header">
+    <div class="company">${invoice.businesses.name}</div>
+    <div>GSTIN: ${invoice.businesses.gstin || 'N/A'}</div>
+    <div>${invoice.businesses.address || ''}</div>
+    <div>${invoice.businesses.phone || ''} | ${invoice.businesses.email || ''}</div>
   </div>
   
-  <script>
-    window.onload = function() {
-      window.print();
-    };
-  </script>
+  <h2>TAX INVOICE</h2>
+  
+  <div class="invoice-details">
+    <div><strong>Invoice Number:</strong> ${invoice.invoice_number}</div>
+    <div><strong>Invoice Date:</strong> ${invoice.invoice_date}</div>
+    <div><strong>Buyer:</strong> ${invoice.buyer_name}</div>
+    <div><strong>Buyer GSTIN:</strong> ${invoice.buyer_gstin || 'N/A'}</div>
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th>Qty</th>
+        <th>Unit Price</th>
+        <th>GST Rate</th>
+        <th>GST Amount</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${(lineItems || []).map((item: { description: any; quantity: any; unit_price: number; gst_rate: any; gst_amount: number; line_total: number; }) => `
+        <tr>
+          <td>${item.description}</td>
+          <td>${item.quantity}</td>
+          <td>₹${item.unit_price.toFixed(2)}</td>
+          <td>${item.gst_rate}%</td>
+          <td>₹${item.gst_amount.toFixed(2)}</td>
+          <td>₹${item.line_total.toFixed(2)}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+  
+  <div class="totals">
+    <div>Subtotal: ₹${invoice.subtotal.toFixed(2)}</div>
+    <div>GST: ₹${invoice.gst_amount.toFixed(2)}</div>
+    <div class="total-row">Total: ₹${invoice.total.toFixed(2)}</div>
+  </div>
 </body>
 </html>
     `;
 
+    // Log export event
     console.log('[Export Event]', {
       user_id: user.id,
       business_id: invoice.business_id,
@@ -420,6 +155,7 @@ serve(async (req) => {
       timestamp: new Date().toISOString()
     });
 
+    // Return HTML (client can use print or html2pdf)
     return new Response(html, {
       status: 200,
       headers: {
