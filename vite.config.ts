@@ -33,6 +33,9 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "react-native": "react-native-web",
+      "b4a/react-native": "b4a", 
+      "react-query/lib/react/reactBatchedUpdates.native": "react-query/lib/react/reactBatchedUpdates",
     },
   },
 }));
