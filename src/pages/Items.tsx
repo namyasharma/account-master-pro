@@ -551,7 +551,7 @@ export default function Items() {
                               ? `Scanned: ${scannedBarcode}`
                               : hasFeatureAccess("barcode_scanning")
                                 ? "Scan to auto-populate item details"
-                                : `Available on Starter plan • Current: ${currentPlan}`}
+                                : `Available on Starter plan • Current: ${currentPlan} ${isPaid ? "(Paid)" : "(Free)"}`}
                           </p>
                         </div>
                       </div>

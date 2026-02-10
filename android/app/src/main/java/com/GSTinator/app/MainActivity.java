@@ -1,4 +1,4 @@
-package com.jucodes.GSTinator;
+package com.GSTinator.app;
 
 import com.getcapacitor.BridgeActivity;
 

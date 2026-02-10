@@ -1,14 +1,25 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useBusiness } from '@/contexts/BusinessContext';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { AnomalyDetection } from '@/components/AnomalyDetection';
-import { Package, Truck, Users, FileText, Calendar, TrendingUp, ShoppingCart, TrendingDown, DollarSign, ArrowRight } from 'lucide-react';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useBusiness } from "@/contexts/BusinessContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { AnomalyDetection } from "@/components/AnomalyDetection";
+import {
+  Package,
+  Truck,
+  Users,
+  FileText,
+  Calendar,
+  TrendingUp,
+  ShoppingCart,
+  TrendingDown,
+  DollarSign,
+  ArrowRight,
+} from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -25,7 +36,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!selectedBusiness) {
-      navigate('/businesses');
+      navigate("/businesses");
       return;
     }
     fetchDashboardData();
@@ -35,22 +46,36 @@ export default function Dashboard() {
     try {
       const [invoicesResult, purchasesResult] = await Promise.all([
         supabase
-          .from('invoices')
-          .select('total, gst_amount')
-          .eq('business_id', selectedBusiness?.id),
+          .from("invoices")
+          .select("total, gst_amount")
+          .eq("business_id", selectedBusiness?.id),
         supabase
-          .from('purchase_entries')
-          .select('total, gst_amount')
-          .eq('business_id', selectedBusiness?.id),
+          .from("purchase_entries")
+          .select("total, gst_amount")
+          .eq("business_id", selectedBusiness?.id),
       ]);
 
       if (invoicesResult.error) throw invoicesResult.error;
       if (purchasesResult.error) throw purchasesResult.error;
 
-      const totalSales = invoicesResult.data?.reduce((sum, inv) => sum + Number(inv.total), 0) || 0;
-      const outputGST = invoicesResult.data?.reduce((sum, inv) => sum + Number(inv.gst_amount), 0) || 0;
-      const totalPurchases = purchasesResult.data?.reduce((sum, pur) => sum + Number(pur.total), 0) || 0;
-      const inputGST = purchasesResult.data?.reduce((sum, pur) => sum + Number(pur.gst_amount), 0) || 0;
+      const totalSales =
+        invoicesResult.data?.reduce((sum, inv) => sum + Number(inv.total), 0) ||
+        0;
+      const outputGST =
+        invoicesResult.data?.reduce(
+          (sum, inv) => sum + Number(inv.gst_amount),
+          0,
+        ) || 0;
+      const totalPurchases =
+        purchasesResult.data?.reduce(
+          (sum, pur) => sum + Number(pur.total),
+          0,
+        ) || 0;
+      const inputGST =
+        purchasesResult.data?.reduce(
+          (sum, pur) => sum + Number(pur.gst_amount),
+          0,
+        ) || 0;
       const netGST = outputGST - inputGST;
 
       setStats({
@@ -60,9 +85,9 @@ export default function Dashboard() {
       });
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: "Error",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -71,11 +96,15 @@ export default function Dashboard() {
 
   const handleChangeBusiness = () => {
     setSelectedBusiness(null);
-    navigate('/businesses');
+    navigate("/businesses");
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   return (
@@ -96,14 +125,17 @@ export default function Dashboard() {
             </Button>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="border-slate-200 hover:bg-slate-50">
+            <Button
+              variant="outline"
+              className="border-slate-200 hover:bg-slate-50"
+            >
               <Calendar className="h-4 w-4 mr-2" />
               This Month
             </Button>
           </div>
         </div>
         {/* Show upgrade banner for free users */}
-        {currentPlan === 'free' && (
+        {currentPlan === "free" && (
           <Card className="bg-gradient-to-r from-purple-600 to-purple-500 text-white">
             <CardContent className="p-6">
               <h3 className="text-xl font-bold mb-2">
@@ -113,7 +145,7 @@ export default function Dashboard() {
                 Get barcode scanning, unlimited invoices, and more!
               </p>
               <Button
-                onClick={() => navigate('/pricing')}
+                onClick={() => navigate("/pricing")}
                 className="bg-white text-purple-600"
               >
                 View Plans
@@ -129,10 +161,11 @@ export default function Dashboard() {
                 ⏰ Trial Ending Soon
               </h3>
               <p className="text-amber-800 mb-4">
-                Only {trialDaysRemaining} days left in your trial. Upgrade to keep your premium features.
+                Only {trialDaysRemaining} days left in your trial. Upgrade to
+                keep your premium features.
               </p>
               <Button
-                onClick={() => navigate('/pricing')}
+                onClick={() => navigate("/pricing")}
                 className="bg-amber-600 hover:bg-amber-700"
               >
                 Choose a Plan
@@ -150,7 +183,7 @@ export default function Dashboard() {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
                   <TrendingUp className="h-5 w-5 text-white" />
                 </div>
-                {t('dashboard.totalSales')}
+                {t("dashboard.totalSales")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1">
@@ -159,7 +192,8 @@ export default function Dashboard() {
               </div>
               <p className="text-xs text-slate-500 flex items-center gap-1">
                 <TrendingUp className="h-3 w-3 text-green-500" />
-                <span className="text-green-600 font-medium">+12.5%</span> from last month
+                <span className="text-green-600 font-medium">+12.5%</span> from
+                last month
               </p>
             </CardContent>
           </Card>
@@ -172,7 +206,7 @@ export default function Dashboard() {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
                   <ShoppingCart className="h-5 w-5 text-white" />
                 </div>
-                {t('dashboard.totalPurchases')}
+                {t("dashboard.totalPurchases")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1">
@@ -181,7 +215,8 @@ export default function Dashboard() {
               </div>
               <p className="text-xs text-slate-500 flex items-center gap-1">
                 <TrendingDown className="h-3 w-3 text-orange-500" />
-                <span className="text-orange-600 font-medium">-3.2%</span> from last month
+                <span className="text-orange-600 font-medium">-3.2%</span> from
+                last month
               </p>
             </CardContent>
           </Card>
@@ -194,7 +229,7 @@ export default function Dashboard() {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
                   <DollarSign className="h-5 w-5 text-white" />
                 </div>
-                {t('dashboard.netGST')}
+                {t("dashboard.netGST")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-1">
@@ -204,11 +239,11 @@ export default function Dashboard() {
               <p className="text-xs font-medium">
                 {stats.netGST >= 0 ? (
                   <span className="text-red-600 bg-red-50 px-2 py-1 rounded-full">
-                    {t('dashboard.payable')}
+                    {t("dashboard.payable")}
                   </span>
                 ) : (
                   <span className="text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                    {t('dashboard.refundable')}
+                    {t("dashboard.refundable")}
                   </span>
                 )}
               </p>
@@ -225,7 +260,10 @@ export default function Dashboard() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-800">Quick Actions</h2>
-            <Button variant="ghost" className="text-sm text-slate-600 hover:text-slate-800">
+            <Button
+              variant="ghost"
+              className="text-sm text-slate-600 hover:text-slate-800"
+            >
               View All →
             </Button>
           </div>
@@ -238,7 +276,9 @@ export default function Dashboard() {
                     <Package className="h-7 w-7 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-800 mb-1">{t('items.title')}</h3>
+                    <h3 className="text-lg font-bold text-slate-800 mb-1">
+                      {t("items.title")}
+                    </h3>
                     <p className="text-xs text-slate-500">Manage inventory</p>
                   </div>
                   <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -255,7 +295,9 @@ export default function Dashboard() {
                     <Truck className="h-7 w-7 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-800 mb-1">Suppliers</h3>
+                    <h3 className="text-lg font-bold text-slate-800 mb-1">
+                      Suppliers
+                    </h3>
                     <p className="text-xs text-slate-500">Manage vendors</p>
                   </div>
                   <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -272,7 +314,9 @@ export default function Dashboard() {
                     <Users className="h-7 w-7 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-800 mb-1">Customers</h3>
+                    <h3 className="text-lg font-bold text-slate-800 mb-1">
+                      Customers
+                    </h3>
                     <p className="text-xs text-slate-500">Client database</p>
                   </div>
                   <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -289,7 +333,9 @@ export default function Dashboard() {
                     <FileText className="h-7 w-7 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-800 mb-1">{t('invoices.title')}</h3>
+                    <h3 className="text-lg font-bold text-slate-800 mb-1">
+                      {t("invoices.title")}
+                    </h3>
                     <p className="text-xs text-slate-500">Generate bills</p>
                   </div>
                   <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
