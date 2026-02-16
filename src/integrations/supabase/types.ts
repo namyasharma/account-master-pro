@@ -7,10 +7,30 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "13.0.5";
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
   public: {
     Tables: {
@@ -25,6 +45,7 @@ export type Database = {
           name: string;
           owner_id: string;
           phone: string | null;
+          state_code: string | null;
           updated_at: string | null;
         };
         Insert: {
@@ -37,6 +58,7 @@ export type Database = {
           name: string;
           owner_id: string;
           phone?: string | null;
+          state_code?: string | null;
           updated_at?: string | null;
         };
         Update: {
@@ -49,6 +71,7 @@ export type Database = {
           name?: string;
           owner_id?: string;
           phone?: string | null;
+          state_code?: string | null;
           updated_at?: string | null;
         };
         Relationships: [
@@ -540,6 +563,7 @@ export type Database = {
           description: string;
           gst_amount: number;
           gst_rate: number;
+          hsn_sac_code: string | null;
           id: string;
           invoice_id: string;
           item_id: string | null;
@@ -552,6 +576,7 @@ export type Database = {
           description: string;
           gst_amount?: number;
           gst_rate?: number;
+          hsn_sac_code?: string | null;
           id?: string;
           invoice_id: string;
           item_id?: string | null;
@@ -564,6 +589,7 @@ export type Database = {
           description?: string;
           gst_amount?: number;
           gst_rate?: number;
+          hsn_sac_code?: string | null;
           id?: string;
           invoice_id?: string;
           item_id?: string | null;
@@ -593,12 +619,16 @@ export type Database = {
           business_id: string;
           buyer_gstin: string | null;
           buyer_name: string;
+          cgst_amount: number;
           created_at: string | null;
           customer_id: string | null;
           gst_amount: number;
           id: string;
+          igst_amount: number;
           invoice_date: string;
           invoice_number: string;
+          place_of_supply: string | null;
+          sgst_amount: number;
           subtotal: number;
           total: number;
           updated_at: string | null;
@@ -607,12 +637,16 @@ export type Database = {
           business_id: string;
           buyer_gstin?: string | null;
           buyer_name: string;
+          cgst_amount?: number;
           created_at?: string | null;
           customer_id?: string | null;
           gst_amount?: number;
           id?: string;
+          igst_amount?: number;
           invoice_date: string;
           invoice_number: string;
+          place_of_supply?: string | null;
+          sgst_amount?: number;
           subtotal?: number;
           total?: number;
           updated_at?: string | null;
@@ -621,12 +655,16 @@ export type Database = {
           business_id?: string;
           buyer_gstin?: string | null;
           buyer_name?: string;
+          cgst_amount?: number;
           created_at?: string | null;
           customer_id?: string | null;
           gst_amount?: number;
           id?: string;
+          igst_amount?: number;
           invoice_date?: string;
           invoice_number?: string;
+          place_of_supply?: string | null;
+          sgst_amount?: number;
           subtotal?: number;
           total?: number;
           updated_at?: string | null;
@@ -891,16 +929,19 @@ export type Database = {
       state_code: {
         Row: {
           code: string;
+          gst_code: string | null;
           id: string;
           name: string;
         };
         Insert: {
           code: string;
+          gst_code?: string | null;
           id?: string;
           name: string;
         };
         Update: {
           code?: string;
+          gst_code?: string | null;
           id?: string;
           name?: string;
         };
@@ -1357,6 +1398,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["admin", "user"],

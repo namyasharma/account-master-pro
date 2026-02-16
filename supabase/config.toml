@@ -3,7 +3,7 @@ project_id = "yhajamtrsriuuxdmigkp"
 [functions.sync-hsn-data]
 verify_jwt = false
 
-[functions.export-invoices-csv]
+[functions.export-invoice-csv]
 verify_jwt = true
 
 [functions.export-purchases-csv]

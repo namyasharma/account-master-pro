@@ -1,12 +1,21 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useBusiness } from '@/contexts/BusinessContext';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Calendar, DollarSign, Download, FileText, MoreVertical, Plus, TrendingUp, User } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useBusiness } from "@/contexts/BusinessContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Calendar,
+  DollarSign,
+  Download,
+  FileText,
+  MoreVertical,
+  Plus,
+  TrendingUp,
+  User,
+} from "lucide-react";
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -19,7 +28,7 @@ export default function Invoices() {
 
   useEffect(() => {
     if (!selectedBusiness) {
-      navigate('/businesses');
+      navigate("/businesses");
       return;
     }
     fetchInvoices();
@@ -28,18 +37,18 @@ export default function Invoices() {
   const fetchInvoices = async () => {
     try {
       const { data, error } = await supabase
-        .from('invoices')
-        .select('*')
-        .eq('business_id', selectedBusiness?.id)
-        .order('invoice_date', { ascending: false });
+        .from("invoices")
+        .select("*")
+        .eq("business_id", selectedBusiness?.id)
+        .order("invoice_date", { ascending: false });
 
       if (error) throw error;
       setInvoices(data || []);
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: "Error",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -51,24 +60,26 @@ export default function Invoices() {
 
     setExporting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-invoices-csv?business_id=${selectedBusiness.id}`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-invoice-csv?business_id=${selectedBusiness.id}`,
         {
           headers: {
             Authorization: `Bearer ${session?.access_token}`,
           },
-        }
+        },
       );
 
-      if (!response.ok) throw new Error('Export failed');
+      if (!response.ok) throw new Error("Export failed");
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `invoices-${selectedBusiness.name}-${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `invoices-${selectedBusiness.name}-${new Date().toISOString().split("T")[0]}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
 
@@ -77,7 +88,7 @@ export default function Invoices() {
         description: "Invoice data exported to CSV",
       });
     } catch (error) {
-      console.error('Export error:', error);
+      console.error("Export error:", error);
       toast({
         title: "Export failed",
         description: "Could not export invoices",
@@ -91,7 +102,9 @@ export default function Invoices() {
   const handleExportPDF = async (invoiceId: string) => {
     setExporting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-invoice-pdf?invoice_id=${invoiceId}`,
@@ -99,13 +112,13 @@ export default function Invoices() {
           headers: {
             Authorization: `Bearer ${session?.access_token}`,
           },
-        }
+        },
       );
 
-      if (!response.ok) throw new Error('Export failed');
+      if (!response.ok) throw new Error("Export failed");
 
       const html = await response.text();
-      const printWindow = window.open('', '_blank');
+      const printWindow = window.open("", "_blank");
       if (printWindow) {
         printWindow.document.write(html);
         printWindow.document.close();
@@ -117,7 +130,7 @@ export default function Invoices() {
         description: "Invoice opened in new window for printing",
       });
     } catch (error) {
-      console.error('Export error:', error);
+      console.error("Export error:", error);
       toast({
         title: "Export failed",
         description: "Could not generate PDF",
@@ -129,7 +142,11 @@ export default function Invoices() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   return (
@@ -139,7 +156,7 @@ export default function Invoices() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
-              {t('invoices.title')}
+              {t("invoices.title")}
             </h1>
             <p className="text-sm text-slate-500 mt-1">
               Manage and track all your invoices
@@ -161,7 +178,7 @@ export default function Invoices() {
             <Link to="/invoices/create">
               <Button className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-lg shadow-purple-500/30">
                 <Plus className="mr-2 h-4 w-4" />
-                {t('invoices.create')}
+                {t("invoices.create")}
               </Button>
             </Link>
           </div>
@@ -175,8 +192,12 @@ export default function Invoices() {
                 <FileText className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-xs text-slate-500 font-medium">Total Invoices</p>
-                <p className="text-2xl font-bold text-slate-800">{invoices.length}</p>
+                <p className="text-xs text-slate-500 font-medium">
+                  Total Invoices
+                </p>
+                <p className="text-2xl font-bold text-slate-800">
+                  {invoices.length}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -187,9 +208,14 @@ export default function Invoices() {
                 <DollarSign className="h-6 w-6 text-white" />
               </div>
               <div>
-                <p className="text-xs text-slate-500 font-medium">Total Amount</p>
+                <p className="text-xs text-slate-500 font-medium">
+                  Total Amount
+                </p>
                 <p className="text-2xl font-bold text-slate-800">
-                  ₹{invoices.reduce((sum, inv) => sum + Number(inv.total), 0).toFixed(2)}
+                  ₹
+                  {invoices
+                    .reduce((sum, inv) => sum + Number(inv.total), 0)
+                    .toFixed(2)}
                 </p>
               </div>
             </CardContent>
@@ -203,7 +229,10 @@ export default function Invoices() {
               <div>
                 <p className="text-xs text-slate-500 font-medium">Total GST</p>
                 <p className="text-2xl font-bold text-slate-800">
-                  ₹{invoices.reduce((sum, inv) => sum + Number(inv.gst_amount), 0).toFixed(2)}
+                  ₹
+                  {invoices
+                    .reduce((sum, inv) => sum + Number(inv.gst_amount), 0)
+                    .toFixed(2)}
                 </p>
               </div>
             </CardContent>
@@ -217,8 +246,12 @@ export default function Invoices() {
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center mx-auto mb-4">
                 <FileText className="h-10 w-10 text-slate-400" />
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">No invoices yet</h3>
-              <p className="text-slate-500 mb-6">Create your first invoice to get started</p>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">
+                No invoices yet
+              </h3>
+              <p className="text-slate-500 mb-6">
+                Create your first invoice to get started
+              </p>
               <Link to="/invoices/create">
                 <Button className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-lg shadow-purple-500/30">
                   <Plus className="mr-2 h-4 w-4" />
@@ -251,11 +284,14 @@ export default function Invoices() {
                           </h3>
                           <p className="text-xs text-slate-500 flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {new Date(invoice.invoice_date).toLocaleDateString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric'
-                            })}
+                            {new Date(invoice.invoice_date).toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )}
                           </p>
                         </div>
                       </div>

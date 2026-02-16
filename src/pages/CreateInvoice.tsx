@@ -1,19 +1,71 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useBusiness } from '@/contexts/BusinessContext';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { ValidationWarningBadge } from '@/components/ValidationWarningBadge';
-import { validateGstRate, validateHsnGstMatch, ValidationWarning } from '@/lib/gstValidation';
-import { logWorkflowShortcut } from '@/lib/telemetry';
-import { invoiceSchema } from '@/lib/validation';
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useBusiness } from "@/contexts/BusinessContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { ValidationWarningBadge } from "@/components/ValidationWarningBadge";
+import {
+  validateGstRate,
+  validateHsnGstMatch,
+  ValidationWarning,
+} from "@/lib/gstValidation";
+import { logWorkflowShortcut } from "@/lib/telemetry";
+import { invoiceSchema } from "@/lib/validation";
+
+const INDIAN_STATES = [
+  { code: "01", name: "Jammu and Kashmir" },
+  { code: "02", name: "Himachal Pradesh" },
+  { code: "03", name: "Punjab" },
+  { code: "04", name: "Chandigarh" },
+  { code: "05", name: "Uttarakhand" },
+  { code: "06", name: "Haryana" },
+  { code: "07", name: "Delhi" },
+  { code: "08", name: "Rajasthan" },
+  { code: "09", name: "Uttar Pradesh" },
+  { code: "10", name: "Bihar" },
+  { code: "11", name: "Sikkim" },
+  { code: "12", name: "Arunachal Pradesh" },
+  { code: "13", name: "Nagaland" },
+  { code: "14", name: "Manipur" },
+  { code: "15", name: "Mizoram" },
+  { code: "16", name: "Tripura" },
+  { code: "17", name: "Meghalaya" },
+  { code: "18", name: "Assam" },
+  { code: "19", name: "West Bengal" },
+  { code: "20", name: "Jharkhand" },
+  { code: "21", name: "Odisha" },
+  { code: "22", name: "Chhattisgarh" },
+  { code: "23", name: "Madhya Pradesh" },
+  { code: "24", name: "Gujarat" },
+  { code: "25", name: "Daman and Diu" },
+  { code: "26", name: "Dadra and Nagar Haveli" },
+  { code: "27", name: "Maharashtra" },
+  { code: "29", name: "Karnataka" },
+  { code: "30", name: "Goa" },
+  { code: "31", name: "Lakshadweep" },
+  { code: "32", name: "Kerala" },
+  { code: "33", name: "Tamil Nadu" },
+  { code: "34", name: "Puducherry" },
+  { code: "35", name: "Andaman and Nicobar Islands" },
+  { code: "36", name: "Telangana" },
+  { code: "37", name: "Andhra Pradesh" },
+  { code: "38", name: "Ladakh" },
+  { code: "97", name: "Other Territory" },
+  { code: "99", name: "Centre Jurisdiction" },
+];
 
 interface LineItem {
   item_id: string | null;
@@ -21,20 +73,29 @@ interface LineItem {
   quantity: number;
   unit_price: number;
   gst_rate: number;
+  hsn_sac_code: string;
 }
 
 export default function CreateInvoice() {
   const [items, setItems] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [formData, setFormData] = useState({
-    invoice_number: '',
-    invoice_date: new Date().toISOString().split('T')[0],
-    customer_id: '',
-    buyer_name: '',
-    buyer_gstin: '',
+    invoice_number: "",
+    invoice_date: new Date().toISOString().split("T")[0],
+    customer_id: "",
+    buyer_name: "",
+    buyer_gstin: "",
+    place_of_supply: "",
   });
   const [lineItems, setLineItems] = useState<LineItem[]>([
-    { item_id: null, description: '', quantity: 1, unit_price: 0, gst_rate: 0 }
+    {
+      item_id: null,
+      description: "",
+      quantity: 1,
+      unit_price: 0,
+      gst_rate: 0,
+      hsn_sac_code: "",
+    },
   ]);
   const { selectedBusiness } = useBusiness();
   const { user } = useAuth();
@@ -45,20 +106,20 @@ export default function CreateInvoice() {
 
   useEffect(() => {
     if (!selectedBusiness) {
-      navigate('/businesses');
+      navigate("/businesses");
       return;
     }
     fetchItems();
     fetchCustomers();
-    
+
     // Handle prefill from workflow shortcuts
-    const prefillItemId = searchParams.get('prefillItemId');
-    const prefillCustomerId = searchParams.get('prefillCustomerId');
-    
+    const prefillItemId = searchParams.get("prefillItemId");
+    const prefillCustomerId = searchParams.get("prefillCustomerId");
+
     if (prefillItemId) {
       fetchAndPrefillItem(prefillItemId);
     }
-    
+
     if (prefillCustomerId) {
       fetchAndPrefillCustomer(prefillCustomerId);
     }
@@ -67,70 +128,74 @@ export default function CreateInvoice() {
   const fetchCustomers = async () => {
     try {
       const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .eq('business_id', selectedBusiness?.id)
-        .order('name');
+        .from("customers")
+        .select("*")
+        .eq("business_id", selectedBusiness?.id)
+        .order("name");
 
       if (error) throw error;
       setCustomers(data || []);
     } catch (error: any) {
-      console.error('Failed to fetch customers:', error);
+      console.error("Failed to fetch customers:", error);
     }
   };
 
   const fetchAndPrefillCustomer = async (customerId: string) => {
     try {
       const { data: customer, error } = await supabase
-        .from('customers')
-        .select('*')
-        .eq('id', customerId)
+        .from("customers")
+        .select("*")
+        .eq("id", customerId)
         .single();
 
       if (error) throw error;
 
       if (customer) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           customer_id: customer.id,
           buyer_name: customer.name,
-          buyer_gstin: customer.gstin || '',
+          buyer_gstin: customer.gstin || "",
+          place_of_supply:
+            customer.gstin && customer.gstin.length >= 2
+              ? customer.gstin.substring(0, 2)
+              : "",
         }));
 
         if (user?.id && selectedBusiness?.id) {
           logWorkflowShortcut({
-            event_name: 'workflow_shortcut_used',
+            event_name: "workflow_shortcut_used",
             user_id: user.id,
             business_id: selectedBusiness.id,
-            shortcut_type: 'customer_to_invoice',
+            shortcut_type: "customer_to_invoice",
             metadata: { customer_id: customerId },
           });
         }
 
         toast({
-          title: 'Customer prefilled',
+          title: "Customer prefilled",
           description: `Pre-filled with ${customer.name}`,
         });
       }
     } catch (error: any) {
-      console.error('Failed to prefill customer:', error);
+      console.error("Failed to prefill customer:", error);
     }
   };
 
   const fetchItems = async () => {
     try {
       const { data, error } = await supabase
-        .from('items')
-        .select('*')
-        .eq('business_id', selectedBusiness?.id);
+        .from("items")
+        .select("*")
+        .eq("business_id", selectedBusiness?.id);
 
       if (error) throw error;
       setItems(data || []);
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: "Error",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     }
   };
@@ -138,46 +203,49 @@ export default function CreateInvoice() {
   const fetchAndPrefillItem = async (itemId: string) => {
     try {
       const { data: item, error } = await supabase
-        .from('items')
-        .select('*')
-        .eq('id', itemId)
+        .from("items")
+        .select("*")
+        .eq("id", itemId)
         .single();
 
       if (error) throw error;
 
       if (item) {
         // Prefill first line item with item data
-        setLineItems([{
-          item_id: item.id,
-          description: item.name,
-          quantity: 1,
-          unit_price: Number(item.unit_price),
-          gst_rate: Number(item.gst_rate),
-        }]);
+        setLineItems([
+          {
+            item_id: item.id,
+            description: item.name,
+            quantity: 1,
+            unit_price: Number(item.unit_price),
+            gst_rate: Number(item.gst_rate),
+            hsn_sac_code: item.hsn_sac_code || "",
+          },
+        ]);
 
         // Log telemetry
         if (user?.id && selectedBusiness?.id) {
           logWorkflowShortcut({
-            event_name: 'workflow_shortcut_used',
+            event_name: "workflow_shortcut_used",
             user_id: user.id,
             business_id: selectedBusiness.id,
-            shortcut_type: 'item_to_invoice',
+            shortcut_type: "item_to_invoice",
             metadata: { item_id: itemId },
           });
         }
 
         toast({
-          title: 'Item prefilled',
+          title: "Item prefilled",
           description: `Pre-filled with data from ${item.name}`,
         });
       }
     } catch (error: any) {
-      console.error('Failed to prefill item:', error);
+      console.error("Failed to prefill item:", error);
     }
   };
 
   const handleItemSelect = (index: number, itemId: string) => {
-    const item = items.find(i => i.id === itemId);
+    const item = items.find((i) => i.id === itemId);
     if (item) {
       const updated = [...lineItems];
       updated[index] = {
@@ -186,41 +254,102 @@ export default function CreateInvoice() {
         quantity: 1,
         unit_price: Number(item.unit_price),
         gst_rate: Number(item.gst_rate),
+        hsn_sac_code: item.hsn_sac_code || "",
       };
       setLineItems(updated);
     }
   };
 
   const addLineItem = () => {
-    setLineItems([...lineItems, { item_id: null, description: '', quantity: 1, unit_price: 0, gst_rate: 0 }]);
+    setLineItems([
+      ...lineItems,
+      {
+        item_id: null,
+        description: "",
+        quantity: 1,
+        unit_price: 0,
+        gst_rate: 0,
+        hsn_sac_code: "",
+      },
+    ]);
   };
 
   const removeLineItem = (index: number) => {
     setLineItems(lineItems.filter((_, i) => i !== index));
   };
 
+  const calculateGSTSplit = (gstAmount: number) => {
+    // Get seller's state code from selected business
+    const sellerStateCode = selectedBusiness?.state_code;
+    // Get buyer's state code from first 2 digits of GSTIN
+    const buyerStateCode = formData.buyer_gstin?.substring(0, 2);
+    // Get place of supply state code
+    const posStateCode = formData.place_of_supply;
+
+    // If no buyer GSTIN, use place of supply to determine
+    const effectiveBuyerState = buyerStateCode || posStateCode;
+
+    if (!effectiveBuyerState || !sellerStateCode) {
+      // Default to CGST + SGST if we can't determine
+      return {
+        cgst: gstAmount / 2,
+        sgst: gstAmount / 2,
+        igst: 0,
+      };
+    }
+
+    if (effectiveBuyerState === sellerStateCode) {
+      // Same state = CGST + SGST
+      return {
+        cgst: gstAmount / 2,
+        sgst: gstAmount / 2,
+        igst: 0,
+      };
+    } else {
+      // Different state = IGST
+      return {
+        cgst: 0,
+        sgst: 0,
+        igst: gstAmount,
+      };
+    }
+  };
+
   const calculateTotals = () => {
     let subtotal = 0;
     let gstAmount = 0;
 
-    lineItems.forEach(item => {
+    lineItems.forEach((item) => {
       const lineTotal = item.quantity * item.unit_price;
       const lineGST = lineTotal * (item.gst_rate / 100);
       subtotal += lineTotal;
       gstAmount += lineGST;
     });
-
-    return { subtotal, gstAmount, total: subtotal + gstAmount };
+    const gstSplit = calculateGSTSplit(gstAmount);
+    return {
+      subtotal,
+      gstAmount,
+      total: subtotal + gstAmount,
+      cgst: gstSplit.cgst,
+      sgst: gstSplit.sgst,
+      igst: gstSplit.igst,
+    };
   };
 
-  const getLineItemValidationWarnings = (lineItem: LineItem, itemData: any): ValidationWarning[] => {
+  const getLineItemValidationWarnings = (
+    lineItem: LineItem,
+    itemData: any,
+  ): ValidationWarning[] => {
     const warnings: ValidationWarning[] = [];
-    
+
     const rateWarning = validateGstRate(lineItem.gst_rate);
     if (rateWarning) warnings.push(rateWarning);
 
     if (itemData) {
-      const matchWarning = validateHsnGstMatch(lineItem.gst_rate, itemData.gst_rate);
+      const matchWarning = validateHsnGstMatch(
+        lineItem.gst_rate,
+        itemData.gst_rate,
+      );
       if (matchWarning) warnings.push(matchWarning);
     }
 
@@ -228,27 +357,43 @@ export default function CreateInvoice() {
   };
 
   const handleCustomerSelect = (customerId: string) => {
-    const customer = customers.find(c => c.id === customerId);
+    const customer = customers.find((c) => c.id === customerId);
     if (customer) {
       setFormData({
         ...formData,
         customer_id: customer.id,
         buyer_name: customer.name,
-        buyer_gstin: customer.gstin || '',
+        buyer_gstin: customer.gstin || "",
+        place_of_supply:
+          customer.gstin && customer.gstin.length >= 2
+            ? customer.gstin.substring(0, 2)
+            : "",
       });
     }
   };
 
+  const handleBuyerGSTINChange = (value: string) => {
+    console.log("GSTIN changed:", value); // ADD THIS
+    console.log("State code:", value.substring(0, 2)); // ADD THIS
+    setFormData((prev) => ({
+      ...prev,
+      buyer_gstin: value,
+      // Auto-fill place of supply from first 2 digits of GSTIN
+      place_of_supply:
+        value.length >= 2 ? value.substring(0, 2) : prev.place_of_supply,
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       // Validate business is selected
       if (!selectedBusiness?.id) {
         toast({
-          title: 'Validation Error',
-          description: 'Please select a business before creating an invoice',
-          variant: 'destructive',
+          title: "Validation Error",
+          description: "Please select a business before creating an invoice",
+          variant: "destructive",
         });
         return;
       }
@@ -256,14 +401,15 @@ export default function CreateInvoice() {
       // Validate at least one line item
       if (lineItems.length === 0) {
         toast({
-          title: 'Validation Error',
-          description: 'Invoice must have at least one line item',
-          variant: 'destructive',
+          title: "Validation Error",
+          description: "Invoice must have at least one line item",
+          variant: "destructive",
         });
         return;
       }
 
-      const { subtotal, gstAmount, total } = calculateTotals();
+      const { subtotal, gstAmount, total, cgst, sgst, igst } =
+        calculateTotals();
 
       // Validate invoice data
       const validationResult = invoiceSchema.safeParse({
@@ -277,17 +423,19 @@ export default function CreateInvoice() {
       });
 
       if (!validationResult.success) {
-        const errors = validationResult.error.errors.map(e => e.message).join(', ');
+        const errors = validationResult.error.errors
+          .map((e) => e.message)
+          .join(", ");
         toast({
-          title: 'Validation Error',
+          title: "Validation Error",
           description: errors,
-          variant: 'destructive',
+          variant: "destructive",
         });
         return;
       }
 
       const { data: invoice, error: invoiceError } = await supabase
-        .from('invoices')
+        .from("invoices")
         .insert({
           business_id: selectedBusiness.id,
           invoice_number: formData.invoice_number,
@@ -295,8 +443,12 @@ export default function CreateInvoice() {
           customer_id: formData.customer_id || null,
           buyer_name: formData.buyer_name,
           buyer_gstin: formData.buyer_gstin,
+          place_of_supply: formData.place_of_supply || null,
           subtotal,
           gst_amount: gstAmount,
+          cgst_amount: totals.cgst,
+          sgst_amount: totals.sgst,
+          igst_amount: totals.igst,
           total,
         })
         .select()
@@ -304,16 +456,25 @@ export default function CreateInvoice() {
 
       if (invoiceError) {
         // Handle specific database errors
-        if (invoiceError.code === '23505' && invoiceError.message.includes('invoices_business_id_invoice_number_key')) {
-          throw new Error(`Invoice number "${formData.invoice_number}" already exists for this business. Please use a unique invoice number.`);
+        if (
+          invoiceError.code === "23505" &&
+          invoiceError.message.includes(
+            "invoices_business_id_invoice_number_key",
+          )
+        ) {
+          throw new Error(
+            `Invoice number "${formData.invoice_number}" already exists for this business. Please use a unique invoice number.`,
+          );
         }
-        if (invoiceError.code === '23503') {
-          throw new Error('Invalid business or customer reference. Please refresh and try again.');
+        if (invoiceError.code === "23503") {
+          throw new Error(
+            "Invalid business or customer reference. Please refresh and try again.",
+          );
         }
         throw invoiceError;
       }
 
-      const lineItemsData = lineItems.map(item => ({
+      const lineItemsData = lineItems.map((item) => ({
         invoice_id: invoice.id,
         item_id: item.item_id || null,
         description: item.description,
@@ -322,29 +483,32 @@ export default function CreateInvoice() {
         gst_rate: item.gst_rate,
         line_total: item.quantity * item.unit_price,
         gst_amount: (item.quantity * item.unit_price * item.gst_rate) / 100,
+        hsn_sac_code: item.hsn_sac_code || null,
       }));
 
       const { error: lineItemsError } = await supabase
-        .from('invoice_line_items')
+        .from("invoice_line_items")
         .insert(lineItemsData);
 
       if (lineItemsError) {
         // Rollback: delete the invoice if line items fail
-        await supabase.from('invoices').delete().eq('id', invoice.id);
-        throw new Error('Failed to create invoice line items. Please try again.');
+        await supabase.from("invoices").delete().eq("id", invoice.id);
+        throw new Error(
+          "Failed to create invoice line items. Please try again.",
+        );
       }
 
       toast({
-        title: 'Success',
-        description: 'Invoice created successfully',
+        title: "Success",
+        description: "Invoice created successfully",
       });
-      
-      navigate('/invoices');
+
+      navigate("/invoices");
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to create invoice',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to create invoice",
+        variant: "destructive",
       });
     }
   };
@@ -354,8 +518,13 @@ export default function CreateInvoice() {
   return (
     <div className="p-responsive space-y-4 md:space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <h1 className="font-bold">{t('invoices.create')}</h1>
-        <Button onClick={() => navigate('/invoices')} size="sm" variant="outline" className="border-primary/30 hover:bg-primary/10">
+        <h1 className="font-bold">{t("invoices.create")}</h1>
+        <Button
+          onClick={() => navigate("/invoices")}
+          size="sm"
+          variant="outline"
+          className="border-primary/30 hover:bg-primary/10"
+        >
           Back
         </Button>
       </div>
@@ -369,35 +538,42 @@ export default function CreateInvoice() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="invoice_number">{t('invoices.number')}</Label>
+                  <Label htmlFor="invoice_number">{t("invoices.number")}</Label>
                   <Input
                     id="invoice_number"
                     value={formData.invoice_number}
-                    onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        invoice_number: e.target.value,
+                      })
+                    }
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="invoice_date">{t('invoices.date')}</Label>
+                  <Label htmlFor="invoice_date">{t("invoices.date")}</Label>
                   <Input
                     id="invoice_date"
                     type="date"
                     value={formData.invoice_date}
-                    onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, invoice_date: e.target.value })
+                    }
                     required
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label>Select Customer (Optional)</Label>
-                  <Select 
-                    value={formData.customer_id} 
+                  <Select
+                    value={formData.customer_id}
                     onValueChange={handleCustomerSelect}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select existing customer or enter new" />
                     </SelectTrigger>
                     <SelectContent>
-                      {customers.map(customer => (
+                      {customers.map((customer) => (
                         <SelectItem key={customer.id} value={customer.id}>
                           {customer.name}
                         </SelectItem>
@@ -406,21 +582,50 @@ export default function CreateInvoice() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="buyer_name">{t('invoices.buyerName')}</Label>
+                  <Label htmlFor="buyer_name">{t("invoices.buyerName")}</Label>
                   <Input
                     id="buyer_name"
                     value={formData.buyer_name}
-                    onChange={(e) => setFormData({ ...formData, buyer_name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, buyer_name: e.target.value })
+                    }
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="buyer_gstin">{t('invoices.buyerGSTIN')}</Label>
+                  <Label htmlFor="buyer_gstin">
+                    {t("invoices.buyerGSTIN")}
+                  </Label>
                   <Input
                     id="buyer_gstin"
                     value={formData.buyer_gstin}
-                    onChange={(e) => setFormData({ ...formData, buyer_gstin: e.target.value })}
+                    onChange={(e) => handleBuyerGSTINChange(e.target.value)}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="place_of_supply">
+                    Place of Supply
+                    <span className="text-xs text-slate-500 ml-2">
+                      (auto-filled from GSTIN)
+                    </span>
+                  </Label>
+                  <Select
+                    value={formData.place_of_supply}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, place_of_supply: value })
+                    }
+                  >
+                    <SelectTrigger id="place_of_supply">
+                      <SelectValue placeholder="Select state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INDIAN_STATES.map((state) => (
+                        <SelectItem key={state.code} value={state.code}>
+                          {state.code} - {state.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardContent>
@@ -433,16 +638,22 @@ export default function CreateInvoice() {
             <CardContent className="space-y-4">
               {lineItems.map((lineItem, index) => (
                 <div key={index} className="border p-4 rounded space-y-4">
-                  <div className="grid gap-4 md:grid-cols-5">
+                  <div className="grid gap-4 md:grid-cols-6">
                     <div className="space-y-2">
                       <Label>Select Item</Label>
-                      <Select onValueChange={(value) => handleItemSelect(index, value)}>
+                      <Select
+                        onValueChange={(value) =>
+                          handleItemSelect(index, value)
+                        }
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select item" />
                         </SelectTrigger>
                         <SelectContent>
-                          {items.map(item => (
-                            <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
+                          {items.map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.name}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -457,6 +668,18 @@ export default function CreateInvoice() {
                           setLineItems(updated);
                         }}
                         required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>HSN/SAC Code</Label>
+                      <Input
+                        placeholder="e.g. 1006"
+                        value={lineItem.hsn_sac_code}
+                        onChange={(e) => {
+                          const updated = [...lineItems];
+                          updated[index].hsn_sac_code = e.target.value;
+                          setLineItems(updated);
+                        }}
                       />
                     </div>
                     <div className="space-y-2">
@@ -505,16 +728,21 @@ export default function CreateInvoice() {
 
                   {/* Validation Warnings for this line item */}
                   {lineItem.item_id && (
-                    <ValidationWarningBadge 
+                    <ValidationWarningBadge
                       warnings={getLineItemValidationWarnings(
-                        lineItem, 
-                        items.find(i => i.id === lineItem.item_id)
-                      )} 
+                        lineItem,
+                        items.find((i) => i.id === lineItem.item_id),
+                      )}
                     />
                   )}
 
                   {lineItems.length > 1 && (
-                    <Button type="button" variant="destructive" size="sm" onClick={() => removeLineItem(index)}>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeLineItem(index)}
+                    >
                       Remove
                     </Button>
                   )}
@@ -533,6 +761,34 @@ export default function CreateInvoice() {
                   <span>Subtotal:</span>
                   <span>₹{totals.subtotal.toFixed(2)}</span>
                 </div>
+                {totals.igst > 0 ? (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">IGST:</span>
+                    <span>₹{totals.igst.toFixed(2)}</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">CGST:</span>
+                      <span>₹{totals.cgst.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-600">SGST:</span>
+                      <span>₹{totals.sgst.toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
+                {totals.igst > 0 && (
+                  <p className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                    Interstate supply - IGST applicable
+                  </p>
+                )}
+                {totals.cgst > 0 && (
+                  <p className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                    Intrastate supply - CGST + SGST applicable
+                  </p>
+                )}
+
                 <div className="flex justify-between">
                   <span>GST:</span>
                   <span>₹{totals.gstAmount.toFixed(2)}</span>
@@ -545,7 +801,9 @@ export default function CreateInvoice() {
             </CardContent>
           </Card>
 
-          <Button type="submit" className="w-full">{t('common.save')}</Button>
+          <Button type="submit" className="w-full">
+            {t("common.save")}
+          </Button>
         </form>
       </div>
     </div>
