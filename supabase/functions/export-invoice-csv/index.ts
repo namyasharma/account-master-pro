@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { IndustryType } from "../../src/config/industryTemplates";
 interface LineItem {
   invoice_id: string;
   description: string;
@@ -25,7 +26,9 @@ interface Invoice {
 interface Business {
   id: string;
   name: string;
-  owner_id: string;
+  gstin?: string;
+  industry: IndustryType;
+  state_code: string;
 }
 
 interface User {

@@ -38,6 +38,7 @@ interface Business {
   name: string;
   gstin?: string;
   industry: IndustryType;
+  state_code: string;
 }
 
 export default function BusinessSwitcher() {

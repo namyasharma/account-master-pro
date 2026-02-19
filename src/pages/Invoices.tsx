@@ -154,8 +154,10 @@ export default function Invoices() {
     );
   }
   const shareOnWhatsApp = (invoice: any) => {
-    const phone = invoice.customers?.phone?.replace(/\D/g, ""); // strip non-digits
-    const invoiceUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-invoice-pdf?invoice_id=${invoice.id}`;
+    const phone = invoice.customers?.phone?.replace(/\D/g, "");
+
+    // Use your app's domain + share token - no auth needed
+    const shareUrl = `${window.location.origin}/invoice/view/${invoice.share_token}`;
 
     const message = `Hello ${invoice.buyer_name},
 
@@ -164,9 +166,10 @@ export default function Invoices() {
     Date: ${new Date(invoice.invoice_date).toLocaleDateString("en-IN")}
     Amount: ₹${Number(invoice.total).toFixed(2)}
 
-    View/Download Invoice: ${invoiceUrl}
+    View Invoice: ${shareUrl}
 
-    Thank you for your business!`;
+    Thank you for your business!
+    _Sent via GSTinator_`;
 
     if (phone) {
       window.open(
@@ -174,7 +177,6 @@ export default function Invoices() {
         "_blank",
       );
     } else {
-      // No phone - open WhatsApp without pre-filling number
       window.open(
         `https://wa.me/?text=${encodeURIComponent(message)}`,
         "_blank",
