@@ -157,19 +157,18 @@ export default function Invoices() {
     const phone = invoice.customers?.phone?.replace(/\D/g, "");
 
     // Use your app's domain + share token - no auth needed
-    const shareUrl = `${window.location.origin}/invoice/view/${invoice.share_token}`;
+    // const shareUrl = `${window.location.origin}/invoice/view/${invoice.share_token}`;
+    const shareUrl = "https://google.com"; // --- IGNORE ---
 
-    const message = `Hello ${invoice.buyer_name},
-
-    Please find your invoice details below:
-    Invoice No: ${invoice.invoice_number}
-    Date: ${new Date(invoice.invoice_date).toLocaleDateString("en-IN")}
-    Amount: ₹${Number(invoice.total).toFixed(2)}
-
-    View Invoice: ${shareUrl}
-
-    Thank you for your business!
-    _Sent via GSTinator_`;
+    const message =
+      `Hello ${invoice.buyer_name},\n\n` +
+      `Please find your invoice details below:\n` +
+      `Invoice No: ${invoice.invoice_number}\n` +
+      `Date: ${new Date(invoice.invoice_date).toLocaleDateString("en-IN")}\n` +
+      `Amount: ₹${Number(invoice.total).toFixed(2)}\n\n` +
+      `${shareUrl}\n\n` +
+      `Thank you for your business!\n` +
+      `Sent via GSTinator`;
 
     if (phone) {
       window.open(
