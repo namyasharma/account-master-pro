@@ -6,6 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import {
   Calendar,
   DollarSign,
@@ -21,6 +29,9 @@ export default function Invoices() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [exportingGSTR1, setExportingGSTR1] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const { selectedBusiness } = useBusiness();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -101,6 +112,55 @@ export default function Invoices() {
       });
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleExportGSTR1 = async () => {
+    if (!selectedBusiness) return;
+
+    setExportingGSTR1(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      // Get current month and year
+      const now = new Date();
+      const month = selectedMonth.toString().padStart(2, "0");
+      const year = selectedYear.toString();
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-gstr1?business_id=${selectedBusiness.id}&month=${month}&year=${year}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+        },
+      );
+
+      if (!response.ok) throw new Error("Export failed");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `GSTR1_B2B_${selectedBusiness.name}_${month}-${year}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "GSTR-1 Export Successful",
+        description: "B2B invoices exported in GST portal format",
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "Export failed",
+        description: "Could not export GSTR-1 data",
+        variant: "destructive",
+      });
+    } finally {
+      setExportingGSTR1(false);
     }
   };
 
@@ -197,7 +257,58 @@ export default function Invoices() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-3 flex-wrap items-end">
+            {/* Date Range Selector for GSTR-1 */}
+            <div className="flex gap-2 items-end">
+              <div className="space-y-1">
+                <Label className="text-xs text-slate-500">Month</Label>
+                <Select
+                  value={selectedMonth.toString()}
+                  onValueChange={(val) => setSelectedMonth(parseInt(val))}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">January</SelectItem>
+                    <SelectItem value="2">February</SelectItem>
+                    <SelectItem value="3">March</SelectItem>
+                    <SelectItem value="4">April</SelectItem>
+                    <SelectItem value="5">May</SelectItem>
+                    <SelectItem value="6">June</SelectItem>
+                    <SelectItem value="7">July</SelectItem>
+                    <SelectItem value="8">August</SelectItem>
+                    <SelectItem value="9">September</SelectItem>
+                    <SelectItem value="10">October</SelectItem>
+                    <SelectItem value="11">November</SelectItem>
+                    <SelectItem value="12">December</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs text-slate-500">Year</Label>
+                <Select
+                  value={selectedYear.toString()}
+                  onValueChange={(val) => setSelectedYear(parseInt(val))}
+                >
+                  <SelectTrigger className="w-28">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from(
+                      { length: 5 },
+                      (_, i) => new Date().getFullYear() - i,
+                    ).map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <Button
               onClick={handleExportCSV}
               variant="outline"
@@ -207,7 +318,15 @@ export default function Invoices() {
               <Download className="mr-2 h-4 w-4" />
               Export CSV
             </Button>
-
+            <Button
+              onClick={handleExportGSTR1}
+              variant="outline"
+              disabled={exportingGSTR1 || invoices.length === 0}
+              className="border-green-200 hover:bg-green-50 shadow-sm text-green-700 hover:text-green-800"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              {exportingGSTR1 ? "Exporting..." : "GSTR-1 Export"}
+            </Button>
             <Link to="/invoices/create">
               <Button className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-lg shadow-purple-500/30">
                 <Plus className="mr-2 h-4 w-4" />
