@@ -8,6 +8,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Pencil, Trash2 } from "lucide-react";
+import {
   Select,
   SelectTrigger,
   SelectValue,
@@ -30,6 +37,7 @@ export default function Invoices() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [exportingGSTR1, setExportingGSTR1] = useState(false);
+  const [exportingGSTR3B, setExportingGSTR3B] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const { selectedBusiness } = useBusiness();
@@ -68,6 +76,48 @@ export default function Invoices() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteInvoice = async (invoiceId: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this invoice? This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      // Delete line items first (foreign key constraint)
+      const { error: lineItemsError } = await supabase
+        .from("invoice_line_items")
+        .delete()
+        .eq("invoice_id", invoiceId);
+
+      if (lineItemsError) throw lineItemsError;
+
+      // Then delete invoice
+      const { error: invoiceError } = await supabase
+        .from("invoices")
+        .delete()
+        .eq("id", invoiceId);
+
+      if (invoiceError) throw invoiceError;
+
+      toast({
+        title: "Success",
+        description: "Invoice deleted successfully",
+      });
+
+      // Refresh the list
+      fetchInvoices();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -161,6 +211,55 @@ export default function Invoices() {
       });
     } finally {
       setExportingGSTR1(false);
+    }
+  };
+
+  const handleExportGSTR3B = async () => {
+    if (!selectedBusiness) return;
+
+    setExportingGSTR3B(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      // Get current month and year
+      const now = new Date();
+      const month = selectedMonth.toString().padStart(2, "0");
+      const year = selectedYear.toString();
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calculate-gstr3b?business_id=${selectedBusiness.id}&month=${month}&year=${year}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+        },
+      );
+
+      if (!response.ok) throw new Error("Export failed");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `GSTR3B_${selectedBusiness.name}_${month}-${year}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "GSTR-3B Export Successful",
+        description: "B2B invoices exported in GST portal format",
+      });
+    } catch (error) {
+      console.error("Export error:", error);
+      toast({
+        title: "Export failed",
+        description: "Could not export GSTR-3B data",
+        variant: "destructive",
+      });
+    } finally {
+      setExportingGSTR3B(false);
     }
   };
 
@@ -326,6 +425,18 @@ export default function Invoices() {
             >
               <FileText className="mr-2 h-4 w-4" />
               {exportingGSTR1 ? "Exporting..." : "GSTR-1 Export"}
+            </Button>
+            {/* <Button
+              onClick={handleExportGSTR3B}
+              variant="outline"
+              disabled={exportingGSTR3B || invoices.length === 0}
+              className="border-slate-200 hover:bg-slate-50 shadow-sm"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              {exportingGSTR3B ? "Exporting..." : "GSTR-3B Export"}
+            </Button> */}
+            <Button onClick={() => navigate("/gstr3b")} variant="outline">
+              GSTR-3B Summary
             </Button>
             <Link to="/invoices/create">
               <Button className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-lg shadow-purple-500/30">
@@ -513,7 +624,34 @@ export default function Invoices() {
                       size="sm"
                       className="px-3 border-slate-200 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-600 transition-colors"
                     >
-                      <MoreVertical className="h-4 w-4" />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="px-3 border-slate-200 hover:bg-purple-50 hover:border-purple-300 hover:text-purple-600 transition-colors"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              navigate(`/invoices/edit/${invoice.id}`)
+                            }
+                          >
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteInvoice(invoice.id)}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </Button>
                   </div>
 

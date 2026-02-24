@@ -131,23 +131,39 @@ serve(async (req) => {
     for (const invoice of b2bInvoices) {
       const lineItems = invoice.invoice_line_items || [];
 
-      // Group line items by GST rate AND HSN code
+      // Group line items by GST rate + HSN
       const rateHsnGroups: Record<
         string,
-        { taxable: number; gst: number; hsn: string }
+        { taxable: number; gst: number; hsn: string; cessRate: number }
       > = {};
 
-      lineItems.forEach((item: any) => {
+      for (const item of lineItems) {
         const rate = Number(item.gst_rate);
         const hsn = item.hsn_sac_code || "";
-        const key = `${rate}-${hsn}`; // Combine rate + HSN as unique key
 
+        // Lookup cess_rate from gst_rate_rule for this HSN and invoice date
+        let cessRate = 0;
+        const ruleQuery = await supabaseClient
+          .from("gst_rate_rule")
+          .select("cess_rate, hsn_start, hsn_end, effective_from, effective_to")
+          .lte("hsn_start", hsn)
+          .gte("hsn_end", hsn)
+          .lte("effective_from", invoice.invoice_date)
+          .gte("effective_to", invoice.invoice_date)
+          .limit(1)
+          .maybeSingle();
+
+        if (ruleQuery.data?.cess_rate != null) {
+          cessRate = Number(ruleQuery.data.cess_rate);
+        }
+
+        const key = `${rate}-${hsn}`;
         if (!rateHsnGroups[key]) {
-          rateHsnGroups[key] = { taxable: 0, gst: 0, hsn };
+          rateHsnGroups[key] = { taxable: 0, gst: 0, hsn, cessRate };
         }
         rateHsnGroups[key].taxable += Number(item.line_total);
         rateHsnGroups[key].gst += Number(item.gst_amount);
-      });
+      }
 
       Object.entries(rateHsnGroups).forEach(([key, values]) => {
         const rate = parseFloat(key.split("-")[0]);
@@ -157,7 +173,17 @@ serve(async (req) => {
         const sgst = isInterstate ? 0 : values.gst / 2;
 
         const invoiceDate = new Date(invoice.invoice_date);
-        const formattedDate = `${invoiceDate.getDate().toString().padStart(2, "0")}-${(invoiceDate.getMonth() + 1).toString().padStart(2, "0")}-${invoiceDate.getFullYear()}`;
+        const formattedDate = `${invoiceDate
+          .getDate()
+          .toString()
+          .padStart(2, "0")}-${(invoiceDate.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}-${invoiceDate.getFullYear()}`;
+
+        // Compute Cess Amount
+        const cessAmount = ((values.taxable * values.cessRate) / 100).toFixed(
+          2,
+        );
 
         csvRows.push(
           [
@@ -165,7 +191,7 @@ serve(async (req) => {
             `"${invoice.buyer_name}"`, // Receiver Name
             invoice.invoice_number, // Invoice Number
             formattedDate, // Invoice Date
-            (values.taxable + values.gst).toFixed(2), // Invoice Value
+            (values.taxable + values.gst + Number(cessAmount)).toFixed(2), // Invoice Value including cess
             invoice.place_of_supply || "", // Place Of Supply
             "N", // Reverse Charge
             "Regular", // Invoice Type
@@ -175,7 +201,7 @@ serve(async (req) => {
             igst.toFixed(2), // Integrated Tax Amount
             cgst.toFixed(2), // Central Tax Amount
             sgst.toFixed(2), // State/UT Tax Amount
-            "0.00", // Cess Amount
+            cessAmount, // Cess Amount
             values.hsn, // HSN
           ].join(","),
         );

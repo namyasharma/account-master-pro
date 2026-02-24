@@ -24,6 +24,8 @@ import NotFound from "./pages/NotFound";
 import SimpleBarcodeTest from "@/pages/SimpleBarcodeTest";
 import Pricing from "@/pages/Pricing";
 import PublicInvoiceView from "./pages/PublicInvoiceView";
+import EditInvoice from "./pages/EditInvoice";
+import GSTR3BSummary from "./pages/GSTR3BSummary";
 
 const queryClient = new QueryClient();
 
@@ -158,6 +160,14 @@ const App = () => (
                     }
                   />
                   <Route
+                    path="/purchases/edit/:id"
+                    element={
+                      <ProtectedRoute>
+                        <CreatePurchase />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
                     path="/settings"
                     element={
                       <ProtectedRoute>
@@ -185,6 +195,8 @@ const App = () => (
                     path="/invoice/view/:token"
                     element={<PublicInvoiceView />}
                   />
+                  <Route path="/invoices/edit/:id" element={<EditInvoice />} />
+                  <Route path="/gstr3b" element={<GSTR3BSummary />} />
                   <Route path="/" element={<Navigate to="/auth" replace />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useBusiness } from '@/contexts/BusinessContext';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { Download } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useBusiness } from "@/contexts/BusinessContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Download } from "lucide-react";
 
 export default function Purchases() {
   const [purchases, setPurchases] = useState<any[]>([]);
@@ -19,27 +19,56 @@ export default function Purchases() {
 
   useEffect(() => {
     if (!selectedBusiness) {
-      navigate('/businesses');
+      navigate("/businesses");
       return;
     }
     fetchPurchases();
   }, [selectedBusiness]);
 
+  const handleDelete = async (id: string) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this purchase?",
+    );
+    if (!confirmed) return;
+
+    try {
+      const { error } = await supabase
+        .from("purchase_entries")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setPurchases((prev) => prev.filter((p) => p.id !== id));
+
+      toast({
+        title: "Deleted",
+        description: "Purchase entry deleted successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchPurchases = async () => {
     try {
       const { data, error } = await supabase
-        .from('purchase_entries')
-        .select('*')
-        .eq('business_id', selectedBusiness?.id)
-        .order('entry_date', { ascending: false });
+        .from("purchase_entries")
+        .select("*")
+        .eq("business_id", selectedBusiness?.id)
+        .order("entry_date", { ascending: false });
 
       if (error) throw error;
       setPurchases(data || []);
     } catch (error: any) {
       toast({
-        title: 'Error',
+        title: "Error",
         description: error.message,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -48,27 +77,29 @@ export default function Purchases() {
 
   const handleExportCSV = async () => {
     if (!selectedBusiness) return;
-    
+
     setExporting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/export-purchases-csv?business_id=${selectedBusiness.id}`,
         {
           headers: {
             Authorization: `Bearer ${session?.access_token}`,
           },
-        }
+        },
       );
 
-      if (!response.ok) throw new Error('Export failed');
+      if (!response.ok) throw new Error("Export failed");
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `purchases-${selectedBusiness.name}-${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `purchases-${selectedBusiness.name}-${new Date().toISOString().split("T")[0]}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
 
@@ -77,7 +108,7 @@ export default function Purchases() {
         description: "Purchase data exported to CSV",
       });
     } catch (error) {
-      console.error('Export error:', error);
+      console.error("Export error:", error);
       toast({
         title: "Export failed",
         description: "Could not export purchases",
@@ -89,21 +120,25 @@ export default function Purchases() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   return (
     <div className="p-responsive space-y-4 md:space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <h1 className="font-bold">{t('purchases.title')}</h1>
+        <h1 className="font-bold">{t("purchases.title")}</h1>
       </div>
 
       <div className="space-y-4">
         <div className="flex gap-2 mb-4 flex-wrap">
           <Link to="/purchases/create" className="flex-1 sm:flex-none">
-            <Button className="w-full">{t('purchases.add')}</Button>
+            <Button className="w-full">{t("purchases.add")}</Button>
           </Link>
-          <Button 
+          <Button
             onClick={handleExportCSV}
             variant="outline"
             disabled={exporting || purchases.length === 0}
@@ -119,20 +154,46 @@ export default function Purchases() {
               <CardContent className="pt-6">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-lg font-semibold">{purchase.entry_number}</h3>
+                    <h3 className="text-lg font-semibold">
+                      {purchase.entry_number}
+                    </h3>
                     <p className="text-sm text-muted-foreground">
                       {new Date(purchase.entry_date).toLocaleDateString()}
                     </p>
-                    <p className="text-sm text-muted-foreground">{purchase.supplier_name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {purchase.supplier_name}
+                    </p>
                     {purchase.supplier_gstin && (
-                      <p className="text-sm text-muted-foreground">GSTIN: {purchase.supplier_gstin}</p>
+                      <p className="text-sm text-muted-foreground">
+                        GSTIN: {purchase.supplier_gstin}
+                      </p>
                     )}
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold">₹{Number(purchase.total).toFixed(2)}</p>
+                    <p className="text-lg font-bold">
+                      ₹{Number(purchase.total).toFixed(2)}
+                    </p>
                     <p className="text-sm text-muted-foreground">
                       GST: ₹{Number(purchase.gst_amount).toFixed(2)}
                     </p>
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          navigate(`/purchases/edit/${purchase.id}`)
+                        }
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(purchase.id)}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
