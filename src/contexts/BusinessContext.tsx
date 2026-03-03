@@ -1,11 +1,20 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './AuthContext';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./AuthContext";
+import { IndustryType } from "@/config/industryTemplates";
 
 interface Business {
   id: string;
   name: string;
   gstin?: string;
+  industry: IndustryType;
+  state_code: string;
 }
 
 interface BusinessContextType {
@@ -14,12 +23,15 @@ interface BusinessContextType {
   refreshBusinessData: () => Promise<void>;
 }
 
-const BusinessContext = createContext<BusinessContextType | undefined>(undefined);
+const BusinessContext = createContext<BusinessContextType | undefined>(
+  undefined,
+);
 
-const STORAGE_KEY = 'selected_business_id';
+const STORAGE_KEY = "selected_business_id";
 
 export const BusinessProvider = ({ children }: { children: ReactNode }) => {
-  const [selectedBusiness, setSelectedBusinessState] = useState<Business | null>(null);
+  const [selectedBusiness, setSelectedBusinessState] =
+    useState<Business | null>(null);
   const { user } = useAuth();
 
   // Load from localStorage on mount
@@ -29,10 +41,10 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
       if (savedId && user) {
         try {
           const { data, error } = await supabase
-            .from('businesses')
-            .select('*')
-            .eq('id', savedId)
-            .eq('owner_id', user.id)
+            .from("businesses")
+            .select("*")
+            .eq("id", savedId)
+            .eq("owner_id", user.id)
             .maybeSingle();
 
           if (!error && data) {
@@ -41,7 +53,7 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
             localStorage.removeItem(STORAGE_KEY);
           }
         } catch (error) {
-          console.error('Error loading saved business:', error);
+          console.error("Error loading saved business:", error);
           localStorage.removeItem(STORAGE_KEY);
         }
       }
@@ -52,21 +64,21 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
 
   const setSelectedBusiness = async (business: Business | null) => {
     setSelectedBusinessState(business);
-    
+
     if (business) {
       localStorage.setItem(STORAGE_KEY, business.id);
-      
+
       // Update user profile with selected business
       if (user) {
         try {
           await supabase
-            .from('profiles')
-            .update({ 
-              updated_at: new Date().toISOString()
+            .from("profiles")
+            .update({
+              updated_at: new Date().toISOString(),
             })
-            .eq('id', user.id);
+            .eq("id", user.id);
         } catch (error) {
-          console.error('Error updating profile:', error);
+          console.error("Error updating profile:", error);
         }
       }
     } else {
@@ -78,11 +90,11 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
     // This will trigger refetch in components using business data
     if (selectedBusiness) {
       const { data } = await supabase
-        .from('businesses')
-        .select('*')
-        .eq('id', selectedBusiness.id)
+        .from("businesses")
+        .select("*")
+        .eq("id", selectedBusiness.id)
         .maybeSingle();
-      
+
       if (data) {
         setSelectedBusinessState(data);
       }
@@ -90,7 +102,9 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <BusinessContext.Provider value={{ selectedBusiness, setSelectedBusiness, refreshBusinessData }}>
+    <BusinessContext.Provider
+      value={{ selectedBusiness, setSelectedBusiness, refreshBusinessData }}
+    >
       {children}
     </BusinessContext.Provider>
   );
@@ -99,7 +113,7 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
 export const useBusiness = () => {
   const context = useContext(BusinessContext);
   if (context === undefined) {
-    throw new Error('useBusiness must be used within a BusinessProvider');
+    throw new Error("useBusiness must be used within a BusinessProvider");
   }
   return context;
 };

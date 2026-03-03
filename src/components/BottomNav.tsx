@@ -1,21 +1,60 @@
-import { Home, Package, FileText, Settings, ShoppingCart } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
+import {
+  Home,
+  Package,
+  FileText,
+  Settings,
+  ShoppingCart,
+  IndianRupee,
+} from "lucide-react";
+import { NavLink } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function BottomNav() {
   const { userRole } = useAuth();
-  
+
   const navItems = [
-    { to: '/dashboard', icon: Home, label: 'Dashboard', roles: ['admin', 'user'] },
-    { to: '/items', icon: Package, label: 'Items', roles: ['admin', 'user'] },
-    { to: '/invoices', icon: FileText, label: 'Invoices', roles: ['admin', 'user'] },
-    { to: '/purchases', icon: ShoppingCart, label: 'Purchases', roles: ['admin'] },
-    { to: '/settings', icon: Settings, label: 'Settings', roles: ['admin', 'user'] },
+    {
+      to: "/dashboard",
+      icon: Home,
+      label: "Dashboard",
+      roles: ["admin", "user"],
+    },
+    { to: "/items", icon: Package, label: "Items", roles: ["admin", "user"] },
+    {
+      to: "/invoices",
+      icon: FileText,
+      label: "Invoices",
+      roles: ["admin", "user"],
+    },
+    {
+      to: "/purchases",
+      icon: ShoppingCart,
+      label: "Purchases",
+      roles: ["admin", "user"],
+    },
+    {
+      to: "/settings",
+      icon: Settings,
+      label: "Settings",
+      roles: ["admin", "user"],
+    },
+    // {
+    //   to: "/barcode-test",
+    //   icon: Settings,
+    //   label: "Barcode Test",
+    //   roles: ["admin", "user"],
+    // },
+    {
+      to: "/pricing",
+      icon: IndianRupee,
+      label: "Pricing",
+      roles: ["admin", "user"],
+    },
   ];
 
-  const visibleItems = navItems.filter(item => 
-    userRole && item.roles.includes(userRole)
+  const visibleItems = navItems.filter(
+    (item) => userRole && item.roles.includes(userRole),
   );
 
   return (
@@ -27,14 +66,16 @@ export default function BottomNav() {
             to={item.to}
             className={({ isActive }) =>
               cn(
-                'flex flex-col items-center justify-center flex-1 min-h-[56px] gap-1 px-2 rounded-xl transition-all duration-200',
-                'text-muted-foreground hover:text-foreground',
-                isActive && 'text-primary bg-primary/10'
+                "flex flex-col items-center justify-center flex-1 min-h-[56px] gap-1 px-2 rounded-xl transition-all duration-200",
+                "text-muted-foreground hover:text-foreground",
+                isActive && "text-primary bg-primary/10",
               )
             }
           >
             <item.icon className="h-5 w-5 md:h-6 md:w-6" strokeWidth={2.5} />
-            <span className="text-[10px] md:text-xs font-semibold">{item.label}</span>
+            <span className="text-[10px] md:text-xs font-semibold">
+              {item.label}
+            </span>
           </NavLink>
         ))}
       </div>

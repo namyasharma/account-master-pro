@@ -93,7 +93,7 @@ export async function searchHsnSemantic(
         }
 
         console.log('RPC returned:', data);
-        return data ?? [];
+        return (data as HsnCode[]) ?? [];
     } catch (err) {
         console.error('Error in searchHsnSemantic:', err);
         // Fallback to simple text search
