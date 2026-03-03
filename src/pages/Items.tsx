@@ -83,7 +83,6 @@ export default function Items() {
     unit_price: 0,
     unit_of_measure: "kg",
   });
-
   const { selectedBusiness } = useBusiness();
   const { t } = useLanguage();
   const { user } = useAuth();
@@ -107,6 +106,7 @@ export default function Items() {
     fetchItems();
   }, [selectedBusiness]);
 
+  // Filter items based on search query
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredItems(items);
@@ -302,6 +302,7 @@ export default function Items() {
       }
 
       if (editingItem) {
+        // Update existing item
         const { error } = await supabase
           .from("items")
           .update({
