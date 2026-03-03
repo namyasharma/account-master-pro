@@ -26,6 +26,8 @@ import Pricing from "@/pages/Pricing";
 import PublicInvoiceView from "./pages/PublicInvoiceView";
 import EditInvoice from "./pages/EditInvoice";
 import GSTR3BSummary from "./pages/GSTR3BSummary";
+import ResetPassword from "./pages/ResetPassword";
+import ForgotPassword from "./pages/ForgotPassword";
 
 const queryClient = new QueryClient();
 
@@ -195,6 +197,9 @@ const App = () => (
                     path="/invoice/view/:token"
                     element={<PublicInvoiceView />}
                   />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+
                   <Route path="/invoices/edit/:id" element={<EditInvoice />} />
                   <Route path="/gstr3b" element={<GSTR3BSummary />} />
                   <Route path="/" element={<Navigate to="/auth" replace />} />
